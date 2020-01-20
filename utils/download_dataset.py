@@ -5,6 +5,7 @@
 Downloads the csv data 
 """
 
+import csv
 import os
 import urllib3
 import shutil
@@ -12,25 +13,48 @@ import shutil
 import logging
 
 
+# Initial dataset source 
 DATASET_URL = "https://raw.githubusercontent.com/plotly/datasets/master/26k-consumer-complaints.csv"
 
-def download_dataset(url=DATASET_URL):
-    c = urllib3.PoolManager()
-    filename = "data/26k-consumer-complaints.csv"
+# Initial local dataset location
+LOCAL_FILE_NAME = "data/26k-consumer-complaints.csv"
 
-    with c.request('GET', url, preload_content=False) as res, open(filename, 'wb') as out_file:
+def download_dataset(url=DATASET_URL):
+    """download_dataset downloads the remote dataset to a local path
+    
+    Keyword Arguments:
+        url {string} -- complete url path to the csv data source (default: {DATASET_URL})
+        local_path {string} -- initial local file location (default: {LOCAL_FILE_NAME})
+    Returns:
+        None
+    """    
+    c = urllib3.PoolManager()
+    with c.request('GET', url, preload_content=False) as res, open(LOCAL_FILE_NAME, 'wb') as out_file:
         shutil.copyfileobj(res, out_file)
     logging.info("Download completed.")
 
 
 def create_folder():
+    """Creates a data folder if it doesn't exist. 
+    
+    Returns:
+        None
+    """
     directory = "data/"
     if not os.path.exists(directory):
         os.makedirs(directory)
         logging.info("Data folder created.")
+    else:
+        logging.info("Data folder already existed.")
 
 
 def check_execution_path():
+    """Check if the function and therefore all subsequent functions are executed
+    from the root of the project 
+    
+    Returns:
+        boolean -- returns False if execution path isn't the root, otherwise True
+    """
     file_name = "LICENSE"
     if not os.path.exists(file_name):
         logging.error(
@@ -39,8 +63,61 @@ def check_execution_path():
         return False
     return True
 
+def _update_col_names(x, i):
+    """Internal helper function to convert the names of the initial dataset headers
+    
+    Keyword Arguments:
+        x {string} -- name of the column (can be None)
+        i {integer} -- integer representing the number of the column
+    Returns:
+        string - returns simplified string version of the column.
+                 If the column didn't have a name, it return "col_{number of the column}"
+    """
+    if x != "":
+        x = x.replace(" ", "_")
+        x = x.replace("-", "_")
+        x = x.replace("?", "")
+    else:
+        x = f"col_{i}"
+    return x.lower()
+
+
+
+def update_headers():
+    """update_headers updates the header row of the csv file and write the entire file to a new 
+    file with the file name appendix "_modified.csv"
+
+    Keyword Arguments:
+        None
+    Returns:
+        None
+    """
+
+    modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0] + "-modified.csv"
+
+    with open(LOCAL_FILE_NAME, newline='') as inFile, open(modified_file_name, 'w', newline='') as outfile:
+        r = csv.reader(inFile)
+        w = csv.writer(outfile)
+
+        header = next(r, "")  # update the header row
+        new_header = [_update_col_names(col_name, i) for i, col_name in enumerate(header)]
+        w.writerow(new_header)
+
+        # copy the rest
+        for row in r:
+            w.writerow(row)
+        logging.info(f"CSV header updated and rewriten to {modified_file_name}")
+
+
 if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO)
+    logging.info('Started')
 
     if check_execution_path():
         create_folder()
         download_dataset()
+        update_headers()
+        os.remove(LOCAL_FILE_NAME)
+    
+    logging.info('Finished')
