@@ -17,15 +17,21 @@ def get_model(show_summary=True):
 
     # Cat: "product", "sub_product", "state", "zip_code", "company_response", "timely_response", "consumer_disputed"
 
-    # categorical inputs
-    input_product = tf.keras.Input(shape=(1,), name="product_xf")
+    # one-hot categorical features
+    num_products = 11
+    num_company_responses = 6
+    num_timely_responses = 2
+
+    input_product = tf.keras.Input(shape=(num_products,), name="product_xf")
+    input_company_response = tf.keras.Input(shape=(num_company_responses,), name="company_response_xf")
+    input_timely_response = tf.keras.Input(shape=(num_timely_responses,), name="timely_response_xf")
+
+    # categorical features
     input_sub_product = tf.keras.Input(shape=(1,), name="sub_product_xf")
     input_state = tf.keras.Input(shape=(1,), name="state_xf")
     input_zip_code = tf.keras.Input(shape=(1,), name="zip_code_xf")
-    input_company_response = tf.keras.Input(shape=(1,), name="company_response_xf")
-    input_timely_response = tf.keras.Input(shape=(1,), name="timely_response_xf")
 
-    # text inputs
+    # text features
     module_url = "https://tfhub.dev/google/nnlm-en-dim128/2"
     embed = hub.KerasLayer(module_url)
     input_issue = tf.keras.Input(shape=(1,), name="issue_xf", dtype=tf.string)
@@ -41,10 +47,11 @@ def get_model(show_summary=True):
         conv_x = tf.keras.layers.Dense(10, activation='relu')(conv_x)
         return conv_x
 
-    # convert to embeddings
-    x0 = tf.keras.layers.Embedding(12, 3)(input_product)
-    x0 = tf.keras.layers.Reshape((3, ), input_shape=(1, 3))(x0)
+    x0 = input_product
+    x7 = input_company_response
+    x8 = input_timely_response
 
+    # convert to embeddings
     x1 = tf.keras.layers.Embedding(60, 5)(input_sub_product)
     x1 = tf.keras.layers.Reshape((5, ), input_shape=(1, 5))(x1)
 
@@ -53,12 +60,6 @@ def get_model(show_summary=True):
 
     x5 = tf.keras.layers.Embedding(10000, 5)(input_zip_code)
     x5 = tf.keras.layers.Reshape((5, ), input_shape=(1, 5))(x5)
-
-    x7 = tf.keras.layers.Embedding(10, 3)(input_company_response)
-    x7 = tf.keras.layers.Reshape((3, ), input_shape=(1, 3))(x7)
-
-    x8 = tf.keras.layers.Embedding(2, 1)(input_timely_response)
-    x8 = tf.keras.layers.Reshape((1, ), input_shape=(1, 2))(x8)
 
     x_feed_forward = tf.keras.layers.concatenate(
         [x0, x1, x4, x5, x7, x8])
@@ -75,10 +76,9 @@ def get_model(show_summary=True):
     x = tf.keras.layers.Dense(10, activation='relu')(x)
     output = tf.keras.layers.Dense(1, activation='sigmoid')(x) 
 
-    _inputs = [input_product, input_sub_product,
-              input_issue, input_sub_issue, 
-              input_state, input_zip_code, input_company_name, 
-              input_company_response, input_timely_response] 
+    _inputs = [input_product, input_company_response, input_timely_response, 
+              input_sub_product, input_state, input_zip_code, 
+              input_issue, input_sub_issue, input_company_name] 
 
     keras_model = tf.keras.models.Model(_inputs, output)
     keras_model.compile(optimizer='rmsprop',
