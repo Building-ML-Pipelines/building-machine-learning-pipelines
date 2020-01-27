@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 
 """
-Downloads the csv data 
+Downloads the csv data
 """
 
 import csv
@@ -13,7 +13,7 @@ import shutil
 import logging
 
 
-# Initial dataset source 
+# Initial dataset source
 DATASET_URL = "https://raw.githubusercontent.com/plotly/datasets/master/26k-consumer-complaints.csv"
 
 # Initial local dataset location
@@ -21,13 +21,13 @@ LOCAL_FILE_NAME = "data/26k-consumer-complaints.csv"
 
 def download_dataset(url=DATASET_URL):
     """download_dataset downloads the remote dataset to a local path
-    
+
     Keyword Arguments:
         url {string} -- complete url path to the csv data source (default: {DATASET_URL})
         local_path {string} -- initial local file location (default: {LOCAL_FILE_NAME})
     Returns:
         None
-    """    
+    """
     c = urllib3.PoolManager()
     with c.request('GET', url, preload_content=False) as res, open(LOCAL_FILE_NAME, 'wb') as out_file:
         shutil.copyfileobj(res, out_file)
@@ -35,8 +35,8 @@ def download_dataset(url=DATASET_URL):
 
 
 def create_folder():
-    """Creates a data folder if it doesn't exist. 
-    
+    """Creates a data folder if it doesn't exist.
+
     Returns:
         None
     """
@@ -50,8 +50,8 @@ def create_folder():
 
 def check_execution_path():
     """Check if the function and therefore all subsequent functions are executed
-    from the root of the project 
-    
+    from the root of the project
+
     Returns:
         boolean -- returns False if execution path isn't the root, otherwise True
     """
@@ -65,7 +65,7 @@ def check_execution_path():
 
 def _update_col_names(x, i):
     """Internal helper function to convert the names of the initial dataset headers
-    
+
     Keyword Arguments:
         x {string} -- name of the column (can be None)
         i {integer} -- integer representing the number of the column
@@ -84,7 +84,7 @@ def _update_col_names(x, i):
 
 
 def update_headers():
-    """update_headers updates the header row of the csv file and write the entire file to a new 
+    """update_headers updates the header row of the csv file and write the entire file to a new
     file with the file name appendix "_modified.csv"
 
     Keyword Arguments:
@@ -95,9 +95,9 @@ def update_headers():
 
     modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0] + "-modified.csv"
 
-    with open(LOCAL_FILE_NAME, newline='') as inFile, open(modified_file_name, 'w', newline='') as outfile:
-        r = csv.reader(inFile)
-        w = csv.writer(outfile)
+    with open(LOCAL_FILE_NAME, 'r', newline='', encoding='utf8') as input_file, open(modified_file_name, 'w', newline='', encoding='ascii', errors='ignore') as output_file:
+        r = csv.reader(input_file)
+        w = csv.writer(output_file)
 
         header = next(r, "")  # update the header row
         new_header = [_update_col_names(col_name, i) for i, col_name in enumerate(header)]
@@ -119,5 +119,5 @@ if __name__ == "__main__":
         download_dataset()
         update_headers()
         os.remove(LOCAL_FILE_NAME)
-    
+
     logging.info('Finished')

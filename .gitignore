@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 data/
-data2/
-data3/
 .DS_Store
 model.png
+.vscode/
