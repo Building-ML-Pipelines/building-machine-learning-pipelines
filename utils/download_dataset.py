@@ -82,6 +82,12 @@ def _update_col_names(x, i):
     return x.lower()
 
 
+def clean_zip_code(x):
+    if x:
+        return str(int(float(x)))
+    else:
+        return '99999'
+
 
 def update_headers():
     """update_headers updates the header row of the csv file and write the entire file to a new
@@ -104,7 +110,9 @@ def update_headers():
         w.writerow(new_header)
 
         # copy the rest
+        zipcode_idx = new_header.index('zip_code')
         for row in r:
+            row[zipcode_idx] = clean_zip_code(row[zipcode_idx])
             w.writerow(row)
         logging.info(f"CSV header updated and rewriten to {modified_file_name}")
 
