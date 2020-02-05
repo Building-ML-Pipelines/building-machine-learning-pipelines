@@ -22,9 +22,9 @@ def get_model(show_summary=True):
     num_company_responses = 6
     num_timely_responses = 2
 
-    input_product = tf.keras.Input(shape=(num_products,), name="product_xf")
-    input_company_response = tf.keras.Input(shape=(num_company_responses,), name="company_response_xf")
-    input_timely_response = tf.keras.Input(shape=(num_timely_responses,), name="timely_response_xf")
+    input_product = tf.keras.Input(shape=(num_products + 1,), name="product_xf")
+    input_company_response = tf.keras.Input(shape=(num_company_responses + 1,), name="company_response_xf")
+    input_timely_response = tf.keras.Input(shape=(num_timely_responses + 1,), name="timely_response_xf")
 
     # categorical features
     input_sub_product = tf.keras.Input(shape=(1,), name="sub_product_xf")
@@ -52,10 +52,10 @@ def get_model(show_summary=True):
     x8 = input_timely_response
 
     # convert to embeddings
-    x1 = tf.keras.layers.Embedding(60, 5)(input_sub_product)
+    x1 = tf.keras.layers.Embedding(70, 5)(input_sub_product)
     x1 = tf.keras.layers.Reshape((5, ), input_shape=(1, 5))(x1)
 
-    x4 = tf.keras.layers.Embedding(60, 5)(input_state)
+    x4 = tf.keras.layers.Embedding(70, 5)(input_state)
     x4 = tf.keras.layers.Reshape((5, ), input_shape=(1, 5))(x4)
 
     x5 = tf.keras.layers.Embedding(10000, 5)(input_zip_code)
