@@ -84,10 +84,12 @@ def get_model(show_summary=True):
     keras_model.compile(optimizer='rmsprop',
                      loss='binary_crossentropy',  # categorical_crossentropy
                      metrics=[
-                         'accuracy', tf.keras.metrics.TruePositives(), 
-                         tf.keras.metrics.TrueNegatives(), tf.keras.metrics.FalsePositives(), 
-                         tf.keras.metrics.FalseNegatives()]
-                        )
+                         'accuracy', 
+                         tf.keras.metrics.TruePositives(), 
+                         tf.keras.metrics.TrueNegatives(), 
+                         tf.keras.metrics.FalsePositives(), 
+                         tf.keras.metrics.FalseNegatives()
+                         ])
     if show_summary:
         keras_model.summary()
 
