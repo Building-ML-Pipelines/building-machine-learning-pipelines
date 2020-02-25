@@ -118,8 +118,10 @@ def preprocessing_fn(inputs):
         )
 
     # label conversion
-    outputs[_transformed_name(_LABEL_KEY)] = convert_label(
-        _fill_in_missing(inputs[_LABEL_KEY], to_string=True))
-
+    #outputs[_transformed_name(_LABEL_KEY)] = convert_label(
+    #    _fill_in_missing(inputs[_LABEL_KEY], to_string=True))
+    
+    outputs[_transformed_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
+    
     return outputs
 
