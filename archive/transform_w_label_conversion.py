@@ -65,6 +65,18 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
     one_hot_tensor = tf.one_hot(label_tensor, num_labels)
     return tf.reshape(one_hot_tensor, [-1, num_labels])
 
+def convert_label(x):
+    """
+    docs go here
+    """
+    keys_tensor = tf.constant(['No', '', 'Yes'])
+    vals_tensor = tf.constant([0, 0, 1])
+    table = tf.lookup.StaticHashTable(
+        tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor), -1)
+    converted_label = table.lookup(x)
+    converted_label = tf.cast(converted_label, tf.float32)
+    converted_label = tf.reshape(converted_label, [-1, 1])
+    return converted_label
 
 def convert_zip_code(zipcode):
     """
@@ -74,6 +86,7 @@ def convert_zip_code(zipcode):
     zipcode = tf.strings.to_number(zipcode, out_type=tf.dtypes.float32)
     
     return zipcode
+
 
 
 def preprocessing_fn(inputs):
@@ -110,7 +123,9 @@ def preprocessing_fn(inputs):
             _fill_in_missing(inputs[key], to_string=True)
         )
 
-    outputs[_transformed_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
+    # label conversion
+    outputs[_transformed_name(_LABEL_KEY)] = convert_label(
+        _fill_in_missing(inputs[_LABEL_KEY], to_string=True))
         
     return outputs
 

@@ -148,7 +148,7 @@ def run_fn(fn_args):
 
     log_dir = os.path.join(os.path.dirname(fn_args.serving_model_dir), 'logs')
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
-    log_dir=log_dir, update_freq='batch')
+      log_dir=log_dir, update_freq='batch')
     
     model.fit(
       train_dataset,
