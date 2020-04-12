@@ -27,10 +27,6 @@ def _transformed_name(key):
     return key + '_xf'
 
 
-def _transformed_names(keys):
-    return [_transformed_name(key) for key in keys]
-
-
 def _fill_in_missing(x, to_string=False, unk=""):
     """Replace missing values in a SparseTensor.
 
