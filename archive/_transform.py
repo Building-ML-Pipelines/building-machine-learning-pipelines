@@ -3,23 +3,35 @@ import tensorflow_transform as tft
 
 
 _ONE_HOT_FEATURE_KEYS = [
-    "product", "sub_product", "company_response", "state", "issue"
+    "product", "company_response", "timely_response"
 ]
 
-_ONE_HOT_FEATURE_DIMS = [11, 45, 5, 60, 90]
+_ONE_HOT_FEATURE_DIMS = [11, 6, 2]
 
-# buckets for zip_code
-_FEATURE_BUCKET_COUNT = 10
+_OOV_SIZE = 10
 
-_TEXT_FEATURE_KEYS = ["consumer_complaint_narrative"]
+_CATEGORICAL_FEATURE_KEYS = [
+    "sub_product", "state", "zip_code", 
+]
 
-_LABEL_KEY = "consumer_disputed"
+_MAX_CATEGORICAL_FEATURE_VALUES = [41, 59, 90000] 
+
+_TEXT_FEATURE_KEYS = [
+    "issue", "sub_issue", "company"
+]
+
+_LABEL_KEY = 'consumer_disputed'
 
 
 def _transformed_name(key):
     return key + '_xf'
 
-def _fill_in_missing(x, to_string=False, force_zero=False):
+
+def _transformed_names(keys):
+    return [_transformed_name(key) for key in keys]
+
+
+def _fill_in_missing(x, to_string=False, unk=""):
     """Replace missing values in a SparseTensor.
 
     Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
@@ -32,9 +44,6 @@ def _fill_in_missing(x, to_string=False, force_zero=False):
       A rank 1 tensor where missing values of `x` have been filled in.
     """
     default_value = '' if x.dtype == tf.string or to_string else 0
-    
-    if force_zero:
-        default_value = '0'
 
     if type(x) == tf.SparseTensor:
         x = tf.sparse.to_dense(
@@ -42,12 +51,14 @@ def _fill_in_missing(x, to_string=False, force_zero=False):
     return tf.squeeze(x, axis=1)
 
 
-def preprocess_text(text):
-    """
-    docs go here
-    """
-    # let's lower all input strings and remove unnecessary characters
+def preprocessing_text(text):
+    # let's lower all input strings
     text = tf.strings.lower(text)
+    
+    # Before applying the word piece tokenization, let's remove unnecessary 
+    # tokens. This regex_replace was suggested by Aurélien Geron in his 
+    # TFX workshop at TensorFlow World 2019
+    # https://github.com/tensorflow/workshops/blob/master/tfx_labs/Lab_10_Neural_Structured_Learning.ipynb
     text = tf.strings.regex_replace(text, r" '| '|^'|'$", " ")
     text = tf.strings.regex_replace(text, "[^a-z' ]", " ")
     return text
@@ -64,15 +75,15 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
     one_hot_tensor = tf.one_hot(label_tensor, num_labels)
     return tf.reshape(one_hot_tensor, [-1, num_labels])
 
-
-def convert_zip_code(zipcode):
-    """
-    docs go here
-    """
-    zipcode = tf.strings.regex_replace(zipcode, r'X|\[|\*|\+|\-|`|\.|\ |\$|\/|!|\(', "0")
-    zipcode = tf.strings.to_number(zipcode, out_type=tf.dtypes.float32)
-    
-    return zipcode
+def convert_label(x):
+    keys_tensor = tf.constant(['No', '', 'Yes'])
+    vals_tensor = tf.constant([0, 0, 1])
+    table = tf.lookup.StaticHashTable(
+        tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor), -1)
+    converted_label = table.lookup(x)
+    converted_label = tf.cast(converted_label, tf.float32)
+    converted_label = tf.reshape(converted_label, [-1, 1])
+    return converted_label
 
 
 def preprocessing_fn(inputs):
@@ -86,6 +97,12 @@ def preprocessing_fn(inputs):
     """
     outputs = {}
 
+    for i, key in enumerate(_CATEGORICAL_FEATURE_KEYS):
+        outputs[_transformed_name(key)] = tft.compute_and_apply_vocabulary(
+            _fill_in_missing(inputs[key], to_string=True),
+            top_k=_MAX_CATEGORICAL_FEATURE_VALUES[i],
+            num_oov_buckets=_OOV_SIZE)
+
     for i, key in enumerate(_ONE_HOT_FEATURE_KEYS):
         int_value = tft.compute_and_apply_vocabulary(
             _fill_in_missing(inputs[key], to_string=True),
@@ -95,21 +112,16 @@ def preprocessing_fn(inputs):
             num_labels=_ONE_HOT_FEATURE_DIMS[i] + 1
         )
 
-    # specific to this column:
-    temp_zipcode = tft.bucketize(
-            convert_zip_code(_fill_in_missing(inputs["zip_code"], force_zero=True)),
-            _FEATURE_BUCKET_COUNT,
-            always_return_num_quantiles=False)
-    outputs[_transformed_name("zip_code")] = convert_num_to_one_hot(
-            temp_zipcode,
-            num_labels=_FEATURE_BUCKET_COUNT + 1)
-        
     for key in _TEXT_FEATURE_KEYS:
-        outputs[_transformed_name(key)] = preprocess_text(
+        outputs[_transformed_name(key)] = preprocessing_text(
             _fill_in_missing(inputs[key], to_string=True)
         )
 
+    # label conversion
+    #outputs[_transformed_name(_LABEL_KEY)] = convert_label(
+    #    _fill_in_missing(inputs[_LABEL_KEY], to_string=True))
+
     outputs[_transformed_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
-        
+
     return outputs
 

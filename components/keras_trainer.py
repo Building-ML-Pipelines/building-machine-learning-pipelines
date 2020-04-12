@@ -3,8 +3,78 @@ import tensorflow_model_analysis as tfma
 import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import schema_utils
 
-from .model import convert_model_to_estimator, get_model
-from .transform import _transformed_name, _LABEL_KEY
+import tensorflow as tf
+import tensorflow_hub as hub
+
+from typing import List, Text
+
+import os
+
+def get_model(show_summary=True):
+    """
+    This function defines a Keras model and returns the model as a Keras object.
+    """
+    
+    # one-hot categorical features
+    num_products = 12
+    num_sub_products = 46
+    num_company_responses = 6
+    num_states = 61
+    num_issues = 91
+    num_zip_codes = 11
+
+    input_product = tf.keras.Input(shape=(num_products,), name="product_xf")
+    input_sub_product = tf.keras.Input(shape=(num_sub_products,), name="sub_product_xf")
+    input_company_response = tf.keras.Input(shape=(num_company_responses,), name="company_response_xf")
+    input_state = tf.keras.Input(shape=(num_states,), name="state_xf")
+    input_issue = tf.keras.Input(shape=(num_issues,), name="issue_xf")
+    input_zip_code = tf.keras.Input(shape=(num_zip_codes,), name="zip_code_xf")
+
+    # text features
+    input_narrative = tf.keras.Input(shape=(1,), name="consumer_complaint_narrative_xf", dtype=tf.string)
+
+    # embed text features
+    module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+    embed = hub.KerasLayer(module_url)
+    reshaped_narrative = tf.reshape(input_narrative, [-1])
+    embed_narrative = embed(reshaped_narrative) 
+    deep_ff = tf.keras.layers.Reshape((512, ), input_shape=(1, 512))(embed_narrative)
+    
+    deep = tf.keras.layers.Dense(256, activation='relu')(deep_ff)
+    deep = tf.keras.layers.Dense(64, activation='relu')(deep)
+    deep = tf.keras.layers.Dense(16, activation='relu')(deep)
+
+    wide_ff = tf.keras.layers.concatenate(
+        [input_product, input_sub_product, input_company_response, 
+         input_state, input_issue, input_zip_code])
+    wide = tf.keras.layers.Dense(16, activation='relu')(wide_ff)
+
+
+    both = tf.keras.layers.concatenate([deep, wide])
+
+    output = tf.keras.layers.Dense(1, activation='sigmoid')(both) 
+
+    _inputs = [input_product, input_sub_product, input_company_response,  
+               input_state, input_issue, input_zip_code, 
+               input_narrative]
+
+    keras_model = tf.keras.models.Model(_inputs, output)
+    keras_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+                     loss='binary_crossentropy',  
+                     metrics=[
+                         tf.keras.metrics.BinaryAccuracy(),
+                         tf.keras.metrics.TruePositives()
+                         ])
+    if show_summary:
+        keras_model.summary()
+
+    return keras_model
+
+_LABEL_KEY = "consumer_disputed"
+
+
+def _transformed_name(key):
+    return key + '_xf'
 
 
 def _gzip_reader_fn(filenames):
@@ -17,6 +87,8 @@ def _gzip_reader_fn(filenames):
 def _get_serve_tf_examples_fn(model, tf_transform_output):
     """Returns a function that parses a serialized tf.Example."""
 
+    model.tft_layer = tf_transform_output.transform_features_layer()
+
     @tf.function
     def serve_tf_examples_fn(serialized_tf_examples):
         """Returns the output to be used in the serving signature."""
@@ -24,8 +96,7 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
         feature_spec.pop(_LABEL_KEY)
         parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
 
-        transformed_features = tf_transform_output.transform_raw_features(
-            parsed_features)
+        transformed_features = model.tft_layer(parsed_features)
         transformed_features.pop(_transformed_name(_LABEL_KEY))
 
         outputs = model(transformed_features)
@@ -34,9 +105,9 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
     return serve_tf_examples_fn
 
 
-def _input_fn(file_pattern: Text,
-              tf_transform_output: tft.TFTransformOutput,
-              batch_size: int = 32) -> tf.data.Dataset:
+def _input_fn(file_pattern,
+              tf_transform_output,
+              batch_size= 32):
     """Generates features and label for tuning/training.
 
     Args:
@@ -63,7 +134,7 @@ def _input_fn(file_pattern: Text,
 
 
 # TFX Trainer will call this function.
-def run_fn(fn_args: TrainerFnArgs):
+def run_fn(fn_args):
     """Train the model based on given args.
 
     Args:
@@ -76,11 +147,16 @@ def run_fn(fn_args: TrainerFnArgs):
 
     model = get_model()
 
+    log_dir = os.path.join(os.path.dirname(fn_args.serving_model_dir), 'logs')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+      log_dir=log_dir, update_freq='batch')
+    
     model.fit(
       train_dataset,
       steps_per_epoch=fn_args.train_steps,
       validation_data=eval_dataset,
-      validation_steps=fn_args.eval_steps)
+      validation_steps=fn_args.eval_steps,
+      callbacks=[tensorboard_callback])
 
     signatures = {
       'serving_default':
