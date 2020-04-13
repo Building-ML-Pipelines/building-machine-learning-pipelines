@@ -42,22 +42,21 @@ def get_model(show_summary=True):
          input_state, input_issue])#, input_zip_code])
     wide = tf.keras.layers.Dense(16, activation='relu')(wide_ff)
 
-
     both = tf.keras.layers.concatenate([deep, wide])
 
     output = tf.keras.layers.Dense(1, activation='sigmoid')(both) 
 
-    _inputs = [input_product, input_sub_product, input_company_response,  
+    inputs = [input_product, input_sub_product, input_company_response,  
                input_state, input_issue,# input_zip_code, 
                input_narrative]
 
-    keras_model = tf.keras.models.Model(_inputs, output)
+    keras_model = tf.keras.models.Model(inputs, output)
     keras_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-                     loss='binary_crossentropy',  
-                     metrics=[
-                         tf.keras.metrics.BinaryAccuracy(),
-                         tf.keras.metrics.TruePositives()
-                         ])
+                        loss='binary_crossentropy',  
+                        metrics=[
+                            tf.keras.metrics.BinaryAccuracy(),
+                            tf.keras.metrics.TruePositives()
+                        ])
     if show_summary:
         keras_model.summary()
 
