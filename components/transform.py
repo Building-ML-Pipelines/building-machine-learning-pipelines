@@ -19,7 +19,6 @@ _LABEL_KEY = "consumer_disputed"
 def _transformed_name(key):
     return key + '_xf'
 
-
 def _fill_in_missing(x, to_string=False, force_zero=False):
     """Replace missing values in a SparseTensor.
 
