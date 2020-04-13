@@ -128,7 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-data/
+tfx/
 .DS_Store
 model.png
 .vscode/
