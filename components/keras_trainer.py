@@ -63,7 +63,8 @@ def get_model(show_summary=True):
                      loss='binary_crossentropy',  
                      metrics=[
                          tf.keras.metrics.BinaryAccuracy(),
-                         tf.keras.metrics.TruePositives()
+                         tf.keras.metrics.TruePositives(),
+                         tf.keras.metrics.AUC()
                          ])
     if show_summary:
         keras_model.summary()
