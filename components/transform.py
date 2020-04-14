@@ -2,11 +2,17 @@ import tensorflow as tf
 import tensorflow_transform as tft
 
 
-ONE_HOT_FEATURE_KEYS = [
-    "product", "sub_product", "company_response", "state", "issue"
-]
+ONE_HOT_FEATURES = (
+    # feature name, feature dimensionality
+    ("product", 11),
+    ("sub_product", 45),
+    ("company_response", 5), 
+    ("state", 60),
+    ("issue", 90)
+)
 
-ONE_HOT_FEATURE_DIMS = [11, 45, 5, 60, 90]
+ONE_HOT_FEATURE_KEYS = [x[0] for x in ONE_HOT_FEATURES]
+ONE_HOT_FEATURE_DIMS = [x[1] for x in ONE_HOT_FEATURES]
 
 # buckets for zip_code
 FEATURE_BUCKET_COUNT = 10
@@ -44,6 +50,7 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
     Convert a label (0 or 1) into a one-hot vector
     Args:
         int: label_tensor (0 or 1)
+        int: num_labels (default is 2) 
     Returns
         label tensor
     """
@@ -53,12 +60,19 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
 
 def convert_zip_code(zipcode):
     """
-    docs go here
+    Convert a zipcode string to int64 representation. In the dataset the
+    zipcodes are anonymized by repacing the last 3 digits to XXX. We are 
+    replacing those characters to 000 to simplify the bucketing later on.
+
+    Args:
+        str: zipcode
+    Returns:
+        zipcode: int64
     """
     if zipcode == '':
         zipcode = "00000"
     zipcode = tf.strings.regex_replace(zipcode, r'X{0,5}', "0")
-    zipcode = tf.strings.to_number(zipcode, out_type=tf.dtypes.float32)
+    zipcode = tf.strings.to_number(zipcode, out_type=tf.float32)
     return zipcode
 
 
