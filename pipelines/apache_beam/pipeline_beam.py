@@ -31,12 +31,12 @@ def init_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pip
     absl.logging.info(f'Pipeline root set to: {pipeline_root}')
     beam_arg = [
         f'--direct_num_workers={direct_num_workers}',
-        f'--requirements_file={requirement_file}'
+        f'--requirements_file={requirement_file}'  # optional
     ]
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
                           components=components,
-                          enable_cache=True,
+                          enable_cache=False,
                           metadata_connection_config=metadata.sqlite_metadata_connection_config(metadata_path),
                           beam_pipeline_args=beam_arg)
     return p
