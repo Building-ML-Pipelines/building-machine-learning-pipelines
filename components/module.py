@@ -14,24 +14,24 @@ LABEL_KEY = "consumer_disputed"
 # Transform code
 ################
 
+# feature name, feature dimensionality
+ONE_HOT_FEATURES = {
+    "product": 11,
+    "sub_product": 45,
+    "company_response": 5, 
+    "state": 60,
+    "issue": 90
+}
 
-ONE_HOT_FEATURES = (
-    # feature name, feature dimensionality
-    ("product", 11),
-    ("sub_product", 45),
-    ("company_response", 5), 
-    ("state", 60),
-    ("issue", 90)
-)
+# feature name, bucket count
+BUCKET_FEATURES = {
+    "zip_code": 10
+}
 
-ONE_HOT_FEATURE_KEYS = [x[0] for x in ONE_HOT_FEATURES]
-ONE_HOT_FEATURE_DIMS = [x[1] for x in ONE_HOT_FEATURES]
-
-# buckets for zip_code
-FEATURE_BUCKET_COUNT = 10
-
-TEXT_FEATURE_KEYS = ["consumer_complaint_narrative"]
-
+# feature name, value is unused
+TEXT_FEATURES = {
+    "consumer_complaint_narrative": None
+}
 
 def transformed_name(key):
     return key + '_xf'
@@ -98,29 +98,27 @@ def preprocessing_fn(inputs):
     """
     outputs = {}
 
-    for i, key in enumerate(ONE_HOT_FEATURE_KEYS):
+    for key in ONE_HOT_FEATURES.keys():
+        dim = ONE_HOT_FEATURES[key]
         int_value = tft.compute_and_apply_vocabulary(
-            fill_in_missing(inputs[key], to_string=True),
-            top_k=ONE_HOT_FEATURE_DIMS[i] + 1)
+            fill_in_missing(inputs[key], to_string=True), top_k=dim + 1)
         outputs[transformed_name(key)] = convert_num_to_one_hot(
-            int_value,
-            num_labels=ONE_HOT_FEATURE_DIMS[i] + 1
-        )
+            int_value, num_labels=dim + 1)
 
-    # specific to this column:
-    temp_zipcode = tft.bucketize(
-            convert_zip_code(fill_in_missing(inputs["zip_code"])),
-            FEATURE_BUCKET_COUNT,
-            always_return_num_quantiles=False)
-    outputs[transformed_name("zip_code")] = convert_num_to_one_hot(
-            temp_zipcode,
-            num_labels=FEATURE_BUCKET_COUNT + 1)
+    for key, bucket_count in BUCKET_FEATURES.items():
+        temp_feature = tft.bucketize(
+                convert_zip_code(fill_in_missing(inputs[key])),
+                bucket_count,
+                always_return_num_quantiles=False)
+        outputs[transformed_name(key)] = convert_num_to_one_hot(
+                temp_feature,
+                num_labels=bucket_count + 1)
         
-    for key in TEXT_FEATURE_KEYS:
+    for key in TEXT_FEATURES.keys():
         outputs[transformed_name(key)] = \
             fill_in_missing(inputs[key], to_string=True)
 
-    outputs[transformed_name(LABEL_KEY)] = inputs[LABEL_KEY]
+    outputs[transformed_name(LABEL_KEY)] = fill_in_missing(inputs[LABEL_KEY])
         
     return outputs
 
@@ -134,27 +132,23 @@ def get_model(show_summary=True):
     """
     
     # one-hot categorical features
-    num_products = 12
-    num_sub_products = 46
-    num_company_responses = 6
-    num_states = 61
-    num_issues = 91
-    num_zip_codes = 11
+    input_features = []
+    for key, dim in ONE_HOT_FEATURES.items():
+        input_features.append(tf.keras.Input(shape=(dim + 1,), name=transformed_name(key)))
 
-    input_product = tf.keras.Input(shape=(num_products,), name="product_xf")
-    input_sub_product = tf.keras.Input(shape=(num_sub_products,), name="sub_product_xf")
-    input_company_response = tf.keras.Input(shape=(num_company_responses,), name="company_response_xf")
-    input_state = tf.keras.Input(shape=(num_states,), name="state_xf")
-    input_issue = tf.keras.Input(shape=(num_issues,), name="issue_xf")
-    input_zip_code = tf.keras.Input(shape=(num_zip_codes,), name="zip_code_xf")
+    # adding bucketized features 
+    for key, dim in BUCKET_FEATURES.items():
+        input_features.append(tf.keras.Input(shape=(dim + 1,), name=transformed_name(key)))
 
-    # text features
-    input_narrative = tf.keras.Input(shape=(1,), name="consumer_complaint_narrative_xf", dtype=tf.string)
+    # adding text input features
+    input_texts = []
+    for key in TEXT_FEATURES.keys():
+        input_texts.append(tf.keras.Input(shape=(1,), name=transformed_name(key), dtype=tf.string))
 
     # embed text features
-    module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-    embed = hub.KerasLayer(module_url)
-    reshaped_narrative = tf.reshape(input_narrative, [-1])
+    MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
+    embed = hub.KerasLayer(MODULE_URL)
+    reshaped_narrative = tf.reshape(input_texts[0], [-1])
     embed_narrative = embed(reshaped_narrative) 
     deep_ff = tf.keras.layers.Reshape((512, ), input_shape=(1, 512))(embed_narrative)
     
@@ -162,23 +156,16 @@ def get_model(show_summary=True):
     deep = tf.keras.layers.Dense(64, activation='relu')(deep)
     deep = tf.keras.layers.Dense(16, activation='relu')(deep)
 
-    wide_ff = tf.keras.layers.concatenate(
-        [input_product, input_sub_product, input_company_response, 
-         input_state, input_issue, input_zip_code])
+    wide_ff = tf.keras.layers.concatenate(input_features)
     wide = tf.keras.layers.Dense(16, activation='relu')(wide_ff)
 
     both = tf.keras.layers.concatenate([deep, wide])
 
     output = tf.keras.layers.Dense(1, activation='sigmoid')(both) 
 
-    _inputs = [
-               input_product, 
-               input_sub_product, input_company_response,  
-               input_state, input_issue, input_zip_code, 
-               input_narrative
-               ]
+    inputs = input_features + input_texts
 
-    keras_model = tf.keras.models.Model(_inputs, output)
+    keras_model = tf.keras.models.Model(inputs, output)
     keras_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
                         loss='binary_crossentropy',  
                         metrics=[
@@ -189,10 +176,6 @@ def get_model(show_summary=True):
         keras_model.summary()
 
     return keras_model
-
-
-def _transformed_name(key):
-    return key + '_xf'
 
 
 def _gzip_reader_fn(filenames):
@@ -215,7 +198,7 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
         parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
 
         transformed_features = model.tft_layer(parsed_features)
-        transformed_features.pop(_transformed_name(LABEL_KEY))
+        transformed_features.pop(transformed_name(LABEL_KEY))
 
         outputs = model(transformed_features)
         return {'outputs': outputs}
@@ -246,7 +229,7 @@ def _input_fn(file_pattern,
       batch_size=batch_size,
       features=transformed_feature_spec,
       reader=_gzip_reader_fn,
-      label_key=_transformed_name(LABEL_KEY))
+      label_key=transformed_name(LABEL_KEY))
 
     return dataset
 

@@ -2,22 +2,23 @@ import tensorflow as tf
 import tensorflow_transform as tft
 
 
-ONE_HOT_FEATURES = (
-    # feature name, feature dimensionality
-    ("product", 11),
-    ("sub_product", 45),
-    ("company_response", 5), 
-    ("state", 60),
-    ("issue", 90)
-)
+ONE_HOT_FEATURES = {
+    "product": 11,
+    "sub_product": 45,
+    "company_response": 5, 
+    "state": 60,
+    "issue": 90
+}
 
-ONE_HOT_FEATURE_KEYS = [x[0] for x in ONE_HOT_FEATURES]
-ONE_HOT_FEATURE_DIMS = [x[1] for x in ONE_HOT_FEATURES]
+# feature name, bucket count
+BUCKET_FEATURES = {
+    "zip_code": 10
+}
 
-# buckets for zip_code
-FEATURE_BUCKET_COUNT = 10
-
-TEXT_FEATURE_KEYS = ["consumer_complaint_narrative"]
+# feature name, value is unused
+TEXT_FEATURES = {
+    "consumer_complaint_narrative": None
+}
 
 LABEL_KEY = "consumer_disputed"
 
@@ -50,7 +51,6 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
     Convert a label (0 or 1) into a one-hot vector
     Args:
         int: label_tensor (0 or 1)
-        int: num_labels (default is 2) 
     Returns
         label tensor
     """
@@ -76,6 +76,7 @@ def convert_zip_code(zipcode):
     return zipcode
 
 
+
 def preprocessing_fn(inputs):
     """tf.transform's callback function for preprocessing inputs.
 
@@ -87,29 +88,26 @@ def preprocessing_fn(inputs):
     """
     outputs = {}
 
-    for i, key in enumerate(ONE_HOT_FEATURE_KEYS):
+    for key in ONE_HOT_FEATURES.keys():
+        dim = ONE_HOT_FEATURES[key]
         int_value = tft.compute_and_apply_vocabulary(
-            fill_in_missing(inputs[key], to_string=True),
-            top_k=ONE_HOT_FEATURE_DIMS[i] + 1)
+            fill_in_missing(inputs[key], to_string=True), top_k=dim + 1)
         outputs[transformed_name(key)] = convert_num_to_one_hot(
-            int_value,
-            num_labels=ONE_HOT_FEATURE_DIMS[i] + 1
-        )
+            int_value, num_labels=dim + 1)
 
-    # specific to this column:
-    temp_zipcode = tft.bucketize(
-            convert_zip_code(fill_in_missing(inputs["zip_code"])),
-            FEATURE_BUCKET_COUNT,
-            always_return_num_quantiles=False)
-    outputs[transformed_name("zip_code")] = convert_num_to_one_hot(
-            temp_zipcode,
-            num_labels=FEATURE_BUCKET_COUNT + 1)
+    for key, bucket_count in BUCKET_FEATURES.items():
+        temp_feature = tft.bucketize(
+                convert_zip_code(fill_in_missing(inputs[key])),
+                bucket_count,
+                always_return_num_quantiles=False)
+        outputs[transformed_name(key)] = convert_num_to_one_hot(
+                temp_feature,
+                num_labels=bucket_count + 1)
         
-    for key in TEXT_FEATURE_KEYS:
+    for key in TEXT_FEATURES.keys():
         outputs[transformed_name(key)] = \
             fill_in_missing(inputs[key], to_string=True)
 
-    outputs[transformed_name(LABEL_KEY)] = inputs[LABEL_KEY]
+    outputs[transformed_name(LABEL_KEY)] = fill_in_missing(inputs[LABEL_KEY])
         
     return outputs
-

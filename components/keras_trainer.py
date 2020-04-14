@@ -10,33 +10,31 @@ from typing import List, Text
 
 import os
 
+from transform import transformed_name, ONE_HOT_FEATURES
+
 def get_model(show_summary=True):
     """
     This function defines a Keras model and returns the model as a Keras object.
     """
     
     # one-hot categorical features
-    num_products = 12
-    num_sub_products = 46
-    num_company_responses = 6
-    num_states = 61
-    num_issues = 91
-    num_zip_codes = 11
+    input_features = []
+    for key, dim in ONE_HOT_FEATURES.items():
+        input_features.append(tf.keras.Input(shape=(dim + 1,), name=transformed_name(key)))
 
-    input_product = tf.keras.Input(shape=(num_products,), name="product_xf")
-    input_sub_product = tf.keras.Input(shape=(num_sub_products,), name="sub_product_xf")
-    input_company_response = tf.keras.Input(shape=(num_company_responses,), name="company_response_xf")
-    input_state = tf.keras.Input(shape=(num_states,), name="state_xf")
-    input_issue = tf.keras.Input(shape=(num_issues,), name="issue_xf")
-    input_zip_code = tf.keras.Input(shape=(num_zip_codes,), name="zip_code_xf")
+    # adding bucketized features 
+    for key, dim in BUCKET_FEATURES.items():
+        input_features.append(tf.keras.Input(shape=(dim + 1,), name=transformed_name(key)))
 
-    # text features
-    input_narrative = tf.keras.Input(shape=(1,), name="consumer_complaint_narrative_xf", dtype=tf.string)
+    # adding text input features
+    input_texts = []
+    for key in TEXT_FEATURES.keys():
+        input_texts.append(tf.keras.Input(shape=(1,), name=transformed_name(key), dtype=tf.string))
 
     # embed text features
-    module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-    embed = hub.KerasLayer(module_url)
-    reshaped_narrative = tf.reshape(input_narrative, [-1])
+    MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
+    embed = hub.KerasLayer(MODULE_URL)
+    reshaped_narrative = tf.reshape(input_texts[0], [-1])
     embed_narrative = embed(reshaped_narrative) 
     deep_ff = tf.keras.layers.Reshape((512, ), input_shape=(1, 512))(embed_narrative)
     
@@ -44,38 +42,26 @@ def get_model(show_summary=True):
     deep = tf.keras.layers.Dense(64, activation='relu')(deep)
     deep = tf.keras.layers.Dense(16, activation='relu')(deep)
 
-    wide_ff = tf.keras.layers.concatenate(
-        [input_product, input_sub_product, input_company_response, 
-         input_state, input_issue, input_zip_code])
+    wide_ff = tf.keras.layers.concatenate(input_features)
     wide = tf.keras.layers.Dense(16, activation='relu')(wide_ff)
-
 
     both = tf.keras.layers.concatenate([deep, wide])
 
     output = tf.keras.layers.Dense(1, activation='sigmoid')(both) 
 
-    _inputs = [input_product, input_sub_product, input_company_response,  
-               input_state, input_issue, input_zip_code, 
-               input_narrative]
+    inputs = input_features + input_texts
 
-    keras_model = tf.keras.models.Model(_inputs, output)
+    keras_model = tf.keras.models.Model(inputs, output)
     keras_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-                     loss='binary_crossentropy',  
-                     metrics=[
-                         tf.keras.metrics.BinaryAccuracy(),
-                         tf.keras.metrics.TruePositives(),
-                         tf.keras.metrics.AUC()
-                         ])
+                        loss='binary_crossentropy',  
+                        metrics=[
+                            tf.keras.metrics.BinaryAccuracy(),
+                            tf.keras.metrics.TruePositives()
+                        ])
     if show_summary:
         keras_model.summary()
 
     return keras_model
-
-_LABEL_KEY = "consumer_disputed"
-
-
-def _transformed_name(key):
-    return key + '_xf'
 
 
 def _gzip_reader_fn(filenames):
@@ -94,11 +80,11 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
     def serve_tf_examples_fn(serialized_tf_examples):
         """Returns the output to be used in the serving signature."""
         feature_spec = tf_transform_output.raw_feature_spec()
-        feature_spec.pop(_LABEL_KEY)
+        feature_spec.pop(LABEL_KEY)
         parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
 
         transformed_features = model.tft_layer(parsed_features)
-        transformed_features.pop(_transformed_name(_LABEL_KEY))
+        transformed_features.pop(transformed_name(LABEL_KEY))
 
         outputs = model(transformed_features)
         return {'outputs': outputs}
@@ -112,12 +98,12 @@ def _input_fn(file_pattern,
     """Generates features and label for tuning/training.
 
     Args:
-    file_pattern: input tfrecord file pattern.
-    tf_transform_output: A TFTransformOutput.
-    batch_size: representing the number of consecutive elements of returned
-      dataset to combine in a single batch
+        file_pattern: input tfrecord file pattern.
+        tf_transform_output: A TFTransformOutput.
+        batch_size: representing the number of consecutive elements of returned
+          dataset to combine in a single batch
 
-      Returns:
+    Returns:
         A dataset that contains (features, indices) tuple where features is a
           dictionary of Tensors, and indices is a single Tensor of label indices.
     """
@@ -129,7 +115,7 @@ def _input_fn(file_pattern,
       batch_size=batch_size,
       features=transformed_feature_spec,
       reader=_gzip_reader_fn,
-      label_key=_transformed_name(_LABEL_KEY))
+      label_key=transformed_name(LABEL_KEY))
 
     return dataset
 
@@ -153,19 +139,19 @@ def run_fn(fn_args):
       log_dir=log_dir, update_freq='batch')
     
     model.fit(
-      train_dataset,
-      steps_per_epoch=fn_args.train_steps,
-      validation_data=eval_dataset,
-      validation_steps=fn_args.eval_steps,
-      callbacks=[tensorboard_callback])
+        train_dataset,
+        steps_per_epoch=fn_args.train_steps,
+        validation_data=eval_dataset,
+        validation_steps=fn_args.eval_steps,
+        callbacks=[tensorboard_callback])
 
     signatures = {
-      'serving_default':
-          _get_serve_tf_examples_fn(model,
-                                    tf_transform_output).get_concrete_function(
-                                        tf.TensorSpec(
-                                            shape=[None],
-                                            dtype=tf.string,
-                                            name='examples')),
+        'serving_default':
+            _get_serve_tf_examples_fn(model,
+                                      tf_transform_output).get_concrete_function(
+                                          tf.TensorSpec(
+                                              shape=[None],
+                                              dtype=tf.string,
+                                              name='examples')),
     }
     model.save(fn_args.serving_model_dir, save_format='tf', signatures=signatures)
