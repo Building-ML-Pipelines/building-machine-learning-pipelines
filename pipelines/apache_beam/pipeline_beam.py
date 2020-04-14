@@ -114,11 +114,11 @@ def init_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pip
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
                           components=components,
-                          enable_cache=False,
+                          enable_cache=True,
                           metadata_connection_config=metadata.sqlite_metadata_connection_config(metadata_path),
                           beam_pipeline_args=beam_arg)
     return p
-
+    
 
 if __name__ == '__main__':
 
