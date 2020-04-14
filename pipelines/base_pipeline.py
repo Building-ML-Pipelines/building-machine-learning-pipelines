@@ -93,6 +93,6 @@ def init_components(data_dir, module_file, serving_model_dir,
         trainer,
         model_resolver,
         evaluator,
-        pusher,
+        pusher
     ]
     return components

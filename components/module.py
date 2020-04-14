@@ -42,9 +42,6 @@ def _fill_in_missing(x, to_string=False, force_zero=False):
       A rank 1 tensor where missing values of `x` have been filled in.
     """
     default_value = '' if x.dtype == tf.string or to_string else 0
-    
-    if force_zero:
-        default_value = '0'
 
     if type(x) == tf.SparseTensor:
         x = tf.sparse.to_dense(
@@ -56,10 +53,10 @@ def preprocess_text(text):
     """
     docs go here
     """
-    # let's lower all input strings and remove unnecessary characters
-    text = tf.strings.lower(text)
-    text = tf.strings.regex_replace(text, r" '| '|^'|'$", " ")
-    text = tf.strings.regex_replace(text, "[^a-z' ]", " ")
+    # # let's lower all input strings and remove unnecessary characters
+    # text = tf.strings.lower(text)
+    # text = tf.strings.regex_replace(text, r" '| '|^'|'$", " ")
+    # text = tf.strings.regex_replace(text, "[^a-z' ]", " ")
     return text
 
 
@@ -79,9 +76,10 @@ def convert_zip_code(zipcode):
     """
     docs go here
     """
-    zipcode = tf.strings.regex_replace(zipcode, r'X|\[|\*|\+|\-|`|\.|\ |\$|\/|!|\(', "0")
+    if zipcode == '':
+        zipcode = "00000"
+    zipcode = tf.strings.regex_replace(zipcode, r'X{0,5}', "0")
     zipcode = tf.strings.to_number(zipcode, out_type=tf.dtypes.float32)
-    
     return zipcode
 
 
