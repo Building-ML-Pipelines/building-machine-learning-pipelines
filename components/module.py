@@ -119,8 +119,7 @@ def preprocessing_fn(inputs):
             _fill_in_missing(inputs[key], to_string=True)
         )
 
-    outputs[_transformed_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
-        
+    outputs[_transformed_name(_LABEL_KEY)] = _fill_in_missing(inputs[_LABEL_KEY])
     return outputs
 
 ################
@@ -166,14 +165,16 @@ def get_model(show_summary=True):
          input_state, input_issue, input_zip_code])
     wide = tf.keras.layers.Dense(16, activation='relu')(wide_ff)
 
-
     both = tf.keras.layers.concatenate([deep, wide])
 
     output = tf.keras.layers.Dense(1, activation='sigmoid')(both) 
 
-    _inputs = [input_product, input_sub_product, input_company_response,  
+    _inputs = [
+               input_product, 
+               input_sub_product, input_company_response,  
                input_state, input_issue, input_zip_code, 
-               input_narrative]
+               input_narrative
+               ]
 
     keras_model = tf.keras.models.Model(_inputs, output)
     keras_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
@@ -186,8 +187,6 @@ def get_model(show_summary=True):
         keras_model.summary()
 
     return keras_model
-
-_LABEL_KEY = "consumer_disputed"
 
 
 def _transformed_name(key):
@@ -264,14 +263,15 @@ def run_fn(fn_args):
 
     model = get_model()
 
-    # log_dir = os.path.join(os.path.dirname(fn_args.serving_model_dir), 'logs')
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, update_freq='batch')
+    log_dir = os.path.join(os.path.dirname(fn_args.serving_model_dir), 'logs')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, update_freq='batch')
     callbacks = [
-        # tensorboard_callback
+        tensorboard_callback
     ]
 
     model.fit(
         train_dataset,
+        epochs=1,
         steps_per_epoch=fn_args.train_steps,
         validation_data=eval_dataset,
         validation_steps=fn_args.eval_steps,

@@ -26,8 +26,8 @@ data_dir = os.path.join(pipeline_dir, 'data')
 module_file = os.path.join(pipeline_dir, 'components/module.py')
 serving_model_dir = os.path.join(pipeline_dir, 'serving_model', pipeline_name)
 
-pipeline_root = os.path.join(pipeline_dir, 'tfx', 'beam', pipeline_name)
-metadata_path = os.path.join(pipeline_root, 'metadata.db')
+pipeline_root = os.path.join(pipeline_dir, 'tfx-2', 'beam', pipeline_name)
+metadata_path = os.path.join(pipeline_root, 'metadata.sqlite')
 requirement_file = os.path.join(pipeline_dir, 'requirements.txt')
 
 
@@ -66,12 +66,6 @@ def init_components():
         model=Channel(type=Model),
         model_blessing=Channel(type=ModelBlessing))
 
-    model_resolver = ResolverNode(
-        instance_name='latest_blessed_model_resolver',
-        resolver_class=latest_blessed_model_resolver.LatestBlessedModelResolver,
-        model=Channel(type=Model),
-        model_blessing=Channel(type=ModelBlessing))
-
     eval_config=tfma.EvalConfig(
         model_specs=[tfma.ModelSpec(label_key='consumer_disputed')],
         slicing_specs=[tfma.SlicingSpec(), tfma.SlicingSpec(feature_keys=['product'])],
@@ -79,9 +73,9 @@ def init_components():
             tfma.MetricsSpec(metrics=[
                 tfma.MetricConfig(class_name='BinaryAccuracy'),
                 tfma.MetricConfig(class_name='ExampleCount'),
-                ])]
-
-        )
+                ])
+        ]
+    )
 
     evaluator = Evaluator(
         examples=example_gen.outputs['examples'],
@@ -120,7 +114,7 @@ def init_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pip
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
                           components=components,
-                          enable_cache=True,
+                          enable_cache=False,
                           metadata_connection_config=metadata.sqlite_metadata_connection_config(metadata_path),
                           beam_pipeline_args=beam_arg)
     return p
