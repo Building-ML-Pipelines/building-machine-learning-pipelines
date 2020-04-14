@@ -58,8 +58,17 @@ def init_components(data_dir, module_file, serving_model_dir,
             tfma.MetricsSpec(metrics=[
                 tfma.MetricConfig(class_name='BinaryAccuracy'),
                 tfma.MetricConfig(class_name='ExampleCount'),
-                ])
-        ]
+                tfma.MetricConfig(class_name='AUC')
+              ],
+              thresholds={
+                  'AUC':
+                      tfma.config.MetricThreshold(
+                          value_threshold=tfma.GenericValueThreshold(
+                              lower_bound={'value': 0.65}),
+                          change_threshold=tfma.GenericChangeThreshold(
+                              direction=tfma.MetricDirection.HIGHER_IS_BETTER,
+                              absolute={'value': 0.01}))}
+                )]
     )
 
     evaluator = Evaluator(
