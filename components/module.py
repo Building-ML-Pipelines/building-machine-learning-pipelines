@@ -7,29 +7,30 @@ import tensorflow_model_analysis as tfma
 import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import schema_utils
 
+
+LABEL_KEY = "consumer_disputed"
+
 ################
 # Transform code
 ################
 
 
-_ONE_HOT_FEATURE_KEYS = [
+ONE_HOT_FEATURE_KEYS = [
     "product", "sub_product", "company_response", "state", "issue"
 ]
 
-_ONE_HOT_FEATURE_DIMS = [11, 45, 5, 60, 90]
+ONE_HOT_FEATURE_DIMS = [11, 45, 5, 60, 90]
 
 # buckets for zip_code
-_FEATURE_BUCKET_COUNT = 10
+FEATURE_BUCKET_COUNT = 10
 
-_TEXT_FEATURE_KEYS = ["consumer_complaint_narrative"]
-
-_LABEL_KEY = "consumer_disputed"
+TEXT_FEATURE_KEYS = ["consumer_complaint_narrative"]
 
 
-def _transformed_name(key):
+def transformed_name(key):
     return key + '_xf'
 
-def _fill_in_missing(x, to_string=False, force_zero=False):
+def fill_in_missing(x, to_string=False):
     """Replace missing values in a SparseTensor.
 
     Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
@@ -47,17 +48,6 @@ def _fill_in_missing(x, to_string=False, force_zero=False):
         x = tf.sparse.to_dense(
             tf.SparseTensor(x.indices, x.values, [x.dense_shape[0], 1]), default_value)
     return tf.squeeze(x, axis=1)
-
-
-def preprocess_text(text):
-    """
-    docs go here
-    """
-    # # let's lower all input strings and remove unnecessary characters
-    # text = tf.strings.lower(text)
-    # text = tf.strings.regex_replace(text, r" '| '|^'|'$", " ")
-    # text = tf.strings.regex_replace(text, "[^a-z' ]", " ")
-    return text
 
 
 def convert_num_to_one_hot(label_tensor, num_labels=2):
@@ -94,30 +84,30 @@ def preprocessing_fn(inputs):
     """
     outputs = {}
 
-    for i, key in enumerate(_ONE_HOT_FEATURE_KEYS):
+    for i, key in enumerate(ONE_HOT_FEATURE_KEYS):
         int_value = tft.compute_and_apply_vocabulary(
-            _fill_in_missing(inputs[key], to_string=True),
-            top_k=_ONE_HOT_FEATURE_DIMS[i] + 1)
-        outputs[_transformed_name(key)] = convert_num_to_one_hot(
+            fill_in_missing(inputs[key], to_string=True),
+            top_k=ONE_HOT_FEATURE_DIMS[i] + 1)
+        outputs[transformed_name(key)] = convert_num_to_one_hot(
             int_value,
-            num_labels=_ONE_HOT_FEATURE_DIMS[i] + 1
+            num_labels=ONE_HOT_FEATURE_DIMS[i] + 1
         )
 
     # specific to this column:
     temp_zipcode = tft.bucketize(
-            convert_zip_code(_fill_in_missing(inputs["zip_code"], force_zero=True)),
-            _FEATURE_BUCKET_COUNT,
+            convert_zip_code(fill_in_missing(inputs["zip_code"])),
+            FEATURE_BUCKET_COUNT,
             always_return_num_quantiles=False)
-    outputs[_transformed_name("zip_code")] = convert_num_to_one_hot(
+    outputs[transformed_name("zip_code")] = convert_num_to_one_hot(
             temp_zipcode,
-            num_labels=_FEATURE_BUCKET_COUNT + 1)
+            num_labels=FEATURE_BUCKET_COUNT + 1)
         
-    for key in _TEXT_FEATURE_KEYS:
-        outputs[_transformed_name(key)] = preprocess_text(
-            _fill_in_missing(inputs[key], to_string=True)
-        )
+    for key in TEXT_FEATURE_KEYS:
+        outputs[transformed_name(key)] = \
+            fill_in_missing(inputs[key], to_string=True)
 
-    outputs[_transformed_name(_LABEL_KEY)] = _fill_in_missing(inputs[_LABEL_KEY])
+    outputs[transformed_name(LABEL_KEY)] = inputs[LABEL_KEY]
+        
     return outputs
 
 ################
@@ -207,11 +197,11 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
     def serve_tf_examples_fn(serialized_tf_examples):
         """Returns the output to be used in the serving signature."""
         feature_spec = tf_transform_output.raw_feature_spec()
-        feature_spec.pop(_LABEL_KEY)
+        feature_spec.pop(LABEL_KEY)
         parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
 
         transformed_features = model.tft_layer(parsed_features)
-        transformed_features.pop(_transformed_name(_LABEL_KEY))
+        transformed_features.pop(_transformed_name(LABEL_KEY))
 
         outputs = model(transformed_features)
         return {'outputs': outputs}
@@ -242,7 +232,7 @@ def _input_fn(file_pattern,
       batch_size=batch_size,
       features=transformed_feature_spec,
       reader=_gzip_reader_fn,
-      label_key=_transformed_name(_LABEL_KEY))
+      label_key=_transformed_name(LABEL_KEY))
 
     return dataset
 

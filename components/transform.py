@@ -19,7 +19,7 @@ LABEL_KEY = "consumer_disputed"
 def transformed_name(key):
     return key + '_xf'
 
-def fill_in_missing(x, to_string=False, force_zero=False):
+def fill_in_missing(x, to_string=False):
     """Replace missing values in a SparseTensor.
 
     Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
@@ -84,7 +84,7 @@ def preprocessing_fn(inputs):
 
     # specific to this column:
     temp_zipcode = tft.bucketize(
-            convert_zip_code(fill_in_missing(inputs["zip_code"], force_zero=True)),
+            convert_zip_code(fill_in_missing(inputs["zip_code"])),
             FEATURE_BUCKET_COUNT,
             always_return_num_quantiles=False)
     outputs[transformed_name("zip_code")] = convert_num_to_one_hot(
