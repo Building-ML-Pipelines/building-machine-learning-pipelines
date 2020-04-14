@@ -47,5 +47,7 @@ if __name__ == '__main__':
     absl.logging.set_verbosity(absl.logging.INFO)
     components = init_components(data_dir, module_file, serving_model_dir, 
                                  training_steps=100, eval_steps=100)
-    pipeline = init_pipeline(components, pipeline_root, 0)
+    threads = int(os.cpu_count() / 2)
+    threads = 1 if threads < 1 else threads
+    pipeline = init_pipeline(components, pipeline_root, threads)
     BeamDagRunner().run(pipeline)
