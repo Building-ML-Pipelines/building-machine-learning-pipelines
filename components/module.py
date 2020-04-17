@@ -85,8 +85,6 @@ def convert_zip_code(zipcode):
     zipcode = tf.strings.to_number(zipcode, out_type=tf.float32)
     return zipcode
 
-
-
 def preprocessing_fn(inputs):
     """tf.transform's callback function for preprocessing inputs.
 
@@ -107,12 +105,12 @@ def preprocessing_fn(inputs):
 
     for key, bucket_count in BUCKET_FEATURES.items():
         temp_feature = tft.bucketize(
-                convert_zip_code(fill_in_missing(inputs[key])),
-                bucket_count,
-                always_return_num_quantiles=False)
+            convert_zip_code(fill_in_missing(inputs[key])),
+            bucket_count,
+            always_return_num_quantiles=False)
         outputs[transformed_name(key)] = convert_num_to_one_hot(
-                temp_feature,
-                num_labels=bucket_count + 1)
+            temp_feature,
+            num_labels=bucket_count + 1)
         
     for key in TEXT_FEATURES.keys():
         outputs[transformed_name(key)] = \
