@@ -4,11 +4,10 @@ import sys
 module_path = os.getcwd()
 if module_path not in sys.path:
     sys.path.append(module_path)
-    
+
 from typing import List, Text
 
 import absl
-
 from tfx.orchestration import metadata, pipeline
 from tfx.orchestration.beam.beam_dag_runner import BeamDagRunner
 
@@ -16,14 +15,18 @@ from pipelines.base_pipeline import init_components
 
 
 pipeline_name = 'consumer_complaint_pipeline_beam'
+
+# pipeline inputs 
 pipeline_dir = os.getcwd()
 data_dir = os.path.join(pipeline_dir, 'data')
-module_file = os.path.join(pipeline_dir, 'components/module.py')
-serving_model_dir = os.path.join(pipeline_dir, 'serving_model', pipeline_name)
-
-pipeline_root = os.path.join(pipeline_dir, 'tfx', 'beam', pipeline_name)
-metadata_path = os.path.join(pipeline_root, 'metadata.sqlite')
+module_file = os.path.join(pipeline_dir, 'components', 'module.py')
 requirement_file = os.path.join(pipeline_dir, 'requirements.txt')
+
+# pipeline outputs
+output_base = os.path.join(pipeline_dir, 'output', pipeline_name)
+serving_model_dir = os.path.join(output_base, pipeline_name)
+pipeline_root = os.path.join(output_base, 'pipeline_root')
+metadata_path = os.path.join(pipeline_root, 'metadata.sqlite')
 
 
 def init_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pipeline.Pipeline:
@@ -47,7 +50,7 @@ if __name__ == '__main__':
     absl.logging.set_verbosity(absl.logging.INFO)
     components = init_components(data_dir, module_file, serving_model_dir, 
                                  training_steps=100, eval_steps=100)
-    threads = int(os.cpu_count() / 2)
-    threads = 1 if threads < 1 else threads
-    pipeline = init_pipeline(components, pipeline_root, threads)
+    direct_num_workers = int(os.cpu_count() / 2)
+    direct_num_workers = 1 if direct_num_workers < 1 else direct_num_workers
+    pipeline = init_pipeline(components, pipeline_root, direct_num_workers)
     BeamDagRunner().run(pipeline)
