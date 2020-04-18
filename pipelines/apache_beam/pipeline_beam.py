@@ -29,13 +29,14 @@ pipeline_root = os.path.join(output_base, 'pipeline_root')
 metadata_path = os.path.join(pipeline_root, 'metadata.sqlite')
 
 
-def init_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pipeline.Pipeline:
+def init_beam_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pipeline.Pipeline:
     
     absl.logging.info(f'Pipeline root set to: {pipeline_root}')
     beam_arg = [
         f'--direct_num_workers={direct_num_workers}',
-        f'--requirements_file={requirement_file}'  # optional
+        f'--requirements_file={requirement_file}'# optional
     ]
+
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
                           components=components,
@@ -52,5 +53,5 @@ if __name__ == '__main__':
                                  training_steps=100, eval_steps=100)
     direct_num_workers = int(os.cpu_count() / 2)
     direct_num_workers = 1 if direct_num_workers < 1 else direct_num_workers
-    pipeline = init_pipeline(components, pipeline_root, direct_num_workers)
+    pipeline = init_beam_pipeline(components, pipeline_root, direct_num_workers)
     BeamDagRunner().run(pipeline)
