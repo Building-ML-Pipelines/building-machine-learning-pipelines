@@ -132,4 +132,8 @@ tfx/
 .DS_Store
 model.png
 .vscode/
-tfx/
+pipelines/kubeflow_pipelines/argo_pipeline_files/*.yaml
+pipelines/kubeflow_pipelines/argo_pipeline_files/*.yml
+pipelines/kubeflow_pipelines/argo_pipeline_files/*.tar.gz
+pipelines/kubeflow_pipelines/argo_pipeline_files/*.tgz
+pipelines/kubeflow_pipelines/argo_pipeline_files/*.zip
