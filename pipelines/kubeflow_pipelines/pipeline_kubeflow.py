@@ -21,8 +21,8 @@ from pipelines.base_pipeline import init_components
 pipeline_name = 'consumer_complaint_pipeline_kubeflow'
 
 persistent_volume_claim = 'tfx-pvc'
-persistent_volume = 'tfx-pv'
-persistent_volume_mount = '/mnt'
+persistent_volume = 'pvc-2b4c7d8f-81db-11ea-b109-42010a8000ca'
+persistent_volume_mount = '/tfx-data'
 
 # temp yaml file for Kubeflow Pipelines
 output_filename = f"{pipeline_name}.yaml"
@@ -67,8 +67,10 @@ if __name__ == '__main__':
             # If running on K8s Engine (GKE) on Google Cloud Platform (GCP),
             # kubeflow_dag_runner.get_default_pipeline_operator_funcs() provides
             # default configurations specifically for GKE on GCP, such as secrets.
+            kubeflow_dag_runner.get_default_pipeline_operator_funcs() + \
             [
-                onprem.mount_pvc(persistent_volume_claim, persistent_volume,
+                onprem.mount_pvc(persistent_volume_claim, 
+                                 persistent_volume,
                                  persistent_volume_mount)
             ]))
 
