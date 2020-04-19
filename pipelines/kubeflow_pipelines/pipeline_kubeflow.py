@@ -21,7 +21,7 @@ from pipelines.base_pipeline import init_components
 pipeline_name = 'consumer_complaint_pipeline_kubeflow'
 
 persistent_volume_claim = 'tfx-pvc'
-persistent_volume = 'pvc-2b4c7d8f-81db-11ea-b109-42010a8000ca'
+persistent_volume = 'tfx-pv'
 persistent_volume_mount = '/tfx-data'
 
 # temp yaml file for Kubeflow Pipelines
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     absl.logging.set_verbosity(absl.logging.INFO)
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
-    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', None)
+    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'hanneshapke/ml-pipelines-tfx-custom:0.21.3')
 
     components = init_components(data_dir, module_file, serving_model_dir, 
                                  training_steps=100, eval_steps=100)
