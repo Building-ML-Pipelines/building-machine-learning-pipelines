@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-access
+  namespace: kubeflow
+  labels:
+    app: data-access
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-access
+  template:
+    metadata:
+      labels:
+        app: data-access
+    spec:
+      containers:
+      - name: alpine
+        image: alpine:latest
+        command: ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
+        volumeMounts:
+        - name: tfx-persistent-storage
+          mountPath: /tfx-data
+      volumes:
+        - name: tfx-persistent-storage
+          persistentVolumeClaim:
+            claimName: tfx-pvc
