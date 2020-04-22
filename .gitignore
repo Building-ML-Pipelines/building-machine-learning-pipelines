@@ -137,3 +137,9 @@ pipelines/kubeflow_pipelines/argo_pipeline_files/*.yml
 pipelines/kubeflow_pipelines/argo_pipeline_files/*.tar.gz
 pipelines/kubeflow_pipelines/argo_pipeline_files/*.tgz
 pipelines/kubeflow_pipelines/argo_pipeline_files/*.zip
+
+pipelines/gcp_cloud_ai/argo_pipeline_files/*.yaml
+pipelines/gcp_cloud_ai/argo_pipeline_files/*.yml
+pipelines/gcp_cloud_ai/argo_pipeline_files/*.tar.gz
+pipelines/gcp_cloud_ai/argo_pipeline_files/*.tgz
+pipelines/gcp_cloud_ai/argo_pipeline_files/*.zip
