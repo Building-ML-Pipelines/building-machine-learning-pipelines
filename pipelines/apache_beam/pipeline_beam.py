@@ -11,7 +11,7 @@ import absl
 from tfx.orchestration import metadata, pipeline
 from tfx.orchestration.beam.beam_dag_runner import BeamDagRunner
 
-from pipelines.base_pipeline import init_components
+from pipelines.base_pipeline import init_components  # noqa
 
 
 pipeline_name = 'consumer_complaint_pipeline_beam'

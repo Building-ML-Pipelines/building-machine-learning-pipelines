@@ -14,7 +14,7 @@ from kfp import onprem
 from tfx.orchestration import pipeline
 from tfx.orchestration.kubeflow import kubeflow_dag_runner
 
-from pipelines.base_pipeline import init_components
+from pipelines.base_pipeline import init_components  # noqa
 
 
 pipeline_name = 'consumer_complaint_pipeline_kubeflow'
@@ -78,3 +78,4 @@ if __name__ == '__main__':
     kubeflow_dag_runner.KubeflowDagRunner(config=runner_config, 
                                           output_dir=output_dir, 
                                           output_filename=output_filename).run(pipeline)
+                                          
