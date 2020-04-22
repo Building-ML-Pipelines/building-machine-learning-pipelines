@@ -19,8 +19,7 @@ def init_components(data_dir, module_file,
                     training_steps=TRAIN_STEPS, eval_steps=EVAL_STEPS,
                     serving_model_dir=None,
                     ai_platform_training_args=None,
-                    ai_platform_serving_args=None,
-                    ai_platform_distributed_training=False):
+                    ai_platform_serving_args=None):
 
     if serving_model_dir and ai_platform_serving_args:
         raise NotImplementedError(
@@ -56,40 +55,9 @@ def init_components(data_dir, module_file,
     }
 
     if ai_platform_training_args:
-
-        if ai_platform_distributed_training:
-
-            # Update ai_platform_training_args if distributed training was enabled.
-            # Number of worker machines used in distributed training.
-            from tfx.orchestration import data_types
-            worker_count = data_types.RuntimeParameter(
-                name='worker-count',
-                default=2,
-                ptype=int,
-            )
-
-            # Type of worker machines used in distributed training.
-            worker_type = data_types.RuntimeParameter(
-                name='worker-type',
-                default='standard',
-                ptype=str,
-            )
-
-            ai_platform_training_args.update({
-                # You can specify the machine types, the number of replicas for workers
-                # and parameter servers.
-                # https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#ScaleTier
-                'scaleTier': 'CUSTOM',
-                'masterType': 'large_model',
-                'workerType': worker_type,
-                'parameterServerType': 'standard',
-                'workerCount': worker_count,
-                'parameterServerCount': 1
-            })
-
         from tfx.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
         training_kwargs.update({
-            "custom_executor_spec": executor_spec.ExecutorClassSpec(ai_platform_trainer_executor.Executor),
+            "custom_executor_spec": executor_spec.ExecutorClassSpec(ai_platform_trainer_executor.GenericExecutor),
             "custom_config": {
                 ai_platform_trainer_executor.TRAINING_ARGS_KEY: ai_platform_training_args}})
     else:

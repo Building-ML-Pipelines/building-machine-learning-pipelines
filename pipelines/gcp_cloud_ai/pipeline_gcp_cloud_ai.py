@@ -28,6 +28,7 @@ data_dir = module_file = os.path.join(input_bucket, 'data')
 
 tfx_root = os.path.join(output_bucket, 'tfx')
 pipeline_root = os.path.join(tfx_root, pipeline_name)
+ai_platform_distributed_training = False
 
 # Google Cloud Platform project id to use when deploying this pipeline.
 project_id = 'oreilly-book'  # <--- needs update by the user
@@ -54,10 +55,40 @@ ai_platform_training_args = {
     # https://cloud.google.com/ml-engine/docs/containers-overview
     # You can specify a custom container here. If not specified, TFX will use a
     # a public container image matching the installed version of TFX.
-    'masterConfig': { 'imageUri': 'gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.3'},  # <---- @Catherine: This might not work for you! You might have to recreate the image on your side
+    'masterConfig': { 'imageUri': 'gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.4'},  # <---- @Catherine: This might not work for you! You might have to recreate the image on your side
     # Note that if you do specify a custom container, ensure the entrypoint
     # calls into TFX's run_executor script (tfx/scripts/run_executor.py)  <--- Important
 }
+
+if ai_platform_distributed_training:
+
+    # Update ai_platform_training_args if distributed training was enabled.
+    # Number of worker machines used in distributed training.
+    from tfx.orchestration import data_types
+    worker_count = data_types.RuntimeParameter(
+        name='worker-count',
+        default=4,
+        ptype=int,
+    )
+
+    # Type of worker machines used in distributed training.
+    worker_type = data_types.RuntimeParameter(
+        name='worker-type',
+        default='standard',
+        ptype=str,
+    )
+
+    ai_platform_training_args.update({
+        # You can specify the machine types, the number of replicas for workers
+        # and parameter servers.
+        # https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#ScaleTier
+        'scaleTier': 'CUSTOM',
+        'masterType': 'large_model',
+        'workerType': worker_type,
+        'parameterServerType': 'standard',
+        'workerCount': worker_count,
+        'parameterServerCount': 1
+    })
 
 # A dict which contains the serving job parameters to be passed to Google
 # Cloud AI Platform. For the full set of parameters supported by Google Cloud AI
@@ -88,9 +119,8 @@ if __name__ == '__main__':
     absl.logging.set_verbosity(absl.logging.INFO)
     components = init_components(
                         data_dir, module_file, 
-                        ai_platform_training_args=None,  # <---- TODO: This needs to be fixed
-                        ai_platform_serving_args=ai_platform_serving_args,
-                        ai_platform_distributed_training=False)
+                        ai_platform_training_args=ai_platform_training_args, 
+                        ai_platform_serving_args=ai_platform_serving_args)
 
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
@@ -106,7 +136,7 @@ if __name__ == '__main__':
     # environment variable 'KUBEFLOW_TFX_IMAGE' is defined. Currently, the tfx
     # cli tool exports the environment variable to pass to the pipelines.
     tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 
-                               'gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.3')
+                               'gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.4')
 
     runner_config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
         kubeflow_metadata_config=metadata_config,

@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     absl.logging.set_verbosity(absl.logging.INFO)
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
-    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'hanneshapke/ml-pipelines-tfx-custom:0.21.3')
+    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'hanneshapke/ml-pipelines-tfx-custom:0.21.4')
 
     components = init_components(data_dir, module_file, serving_model_dir, 
                                  training_steps=100, eval_steps=100)
