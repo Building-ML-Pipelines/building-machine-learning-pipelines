@@ -17,7 +17,6 @@ from tfx.orchestration.kubeflow import kubeflow_dag_runner
 from pipelines.base_pipeline import init_components
 
 
-
 pipeline_name = 'consumer_complaint_pipeline_kubeflow'
 
 persistent_volume_claim = 'tfx-pvc'

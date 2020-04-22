@@ -42,8 +42,8 @@ def init_components(data_dir, module_file, serving_model_dir,
         examples=transform.outputs['transformed_examples'],
         schema=schema_gen.outputs['schema'],
         transform_graph=transform.outputs['transform_graph'],
-        train_args=trainer_pb2.TrainArgs(num_steps=TRAIN_STEPS),
-        eval_args=trainer_pb2.EvalArgs(num_steps=EVAL_STEPS))
+        train_args=trainer_pb2.TrainArgs(num_steps=training_steps),
+        eval_args=trainer_pb2.EvalArgs(num_steps=eval_steps))
 
     model_resolver = ResolverNode(
         instance_name='latest_blessed_model_resolver',
