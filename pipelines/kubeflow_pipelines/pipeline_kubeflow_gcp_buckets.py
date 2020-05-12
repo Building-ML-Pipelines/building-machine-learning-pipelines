@@ -19,21 +19,32 @@ from pipelines.base_pipeline import init_components  # noqa
 
 pipeline_name = 'consumer_complaint_pipeline_kubeflow'
 
-persistent_volume_claim = 'tfx-pvc'
-persistent_volume = 'tfx-pv'
-persistent_volume_mount = '/tfx-data'
+# persistent_volume_claim = 'tfx-pvc'
+# persistent_volume = 'tfx-pv'
+# persistent_volume_mount = '/tfx-data'
 
 # temp yaml file for Kubeflow Pipelines
 output_filename = f"{pipeline_name}.yaml"
 output_dir = os.path.join(os.getcwd(), 'pipelines', 'kubeflow_pipelines', 'argo_pipeline_files')
 
-# pipeline inputs 
-data_dir = os.path.join(persistent_volume_mount, 'data')
-module_file = os.path.join(persistent_volume_mount, 'components', 'module.py')
+# Directory and data locations (uses Google Cloud Storage).
+input_bucket = 'gs://consumer_complaint_gcp_cloud_ai'
+output_bucket = 'gs://consumer_complaint_gcp_cloud_ai'
+data_dir = os.path.join(input_bucket, 'data')
+module_file = os.path.join(input_bucket, 'components', 'module.py')
+output_base = os.path.join(output_bucket, 'output')
 
-# pipeline outputs
-output_base = os.path.join(persistent_volume_mount, 'output')
-serving_model_dir = os.path.join(output_base, pipeline_name)
+tfx_root = os.path.join(output_bucket, 'tfx_pipeline')
+pipeline_root = os.path.join(tfx_root, pipeline_name)
+serving_model_dir = os.path.join(output_bucket, 'serving_model_dir')
+
+# # pipeline inputs 
+# data_dir = os.path.join(persistent_volume_mount, 'data')
+# module_file = os.path.join(persistent_volume_mount, 'components', 'module.py')
+
+# # pipeline outputs
+# output_base = os.path.join(persistent_volume_mount, 'output')
+# serving_model_dir = os.path.join(output_base, pipeline_name)
 
 
 def init_kubeflow_pipeline(components, pipeline_root:Text, direct_num_workers:int) -> pipeline.Pipeline:
@@ -53,11 +64,9 @@ if __name__ == '__main__':
 
     absl.logging.set_verbosity(absl.logging.INFO)
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
-    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'hanneshapke/ml-pipelines-tfx-custom:0.21.4')
+    tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.4')
 
-    components = init_components(data_dir, module_file, 
-                                 serving_model_dir=serving_model_dir, 
-                                 training_steps=100, eval_steps=100)
+    components = init_components(data_dir, module_file, 100, 100, serving_model_dir=serving_model_dir)
 
     runner_config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
         kubeflow_metadata_config=metadata_config,
@@ -69,9 +78,9 @@ if __name__ == '__main__':
             # default configurations specifically for GKE on GCP, such as secrets.
             kubeflow_dag_runner.get_default_pipeline_operator_funcs() + \
             [
-                onprem.mount_pvc(persistent_volume_claim, 
-                                 persistent_volume,
-                                 persistent_volume_mount)
+                # onprem.mount_pvc(persistent_volume_claim, 
+                #                  persistent_volume,
+                #                  persistent_volume_mount)
             ]))
 
     p = init_kubeflow_pipeline(components, output_base, direct_num_workers=0)

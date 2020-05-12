@@ -5,7 +5,7 @@ from tfx.components import (CsvExampleGen, Evaluator, ExampleValidator, Pusher,
 from tfx.components.base import executor_spec
 from tfx.components.trainer.executor import GenericExecutor
 from tfx.dsl.experimental import latest_blessed_model_resolver
-from tfx.proto import pusher_pb2, trainer_pb2
+from tfx.proto import pusher_pb2, trainer_pb2, example_gen_pb2
 from tfx.types import Channel
 from tfx.types.standard_artifacts import Model, ModelBlessing
 from tfx.utils.dsl_utils import external_input
@@ -26,8 +26,14 @@ def init_components(data_dir, module_file,
             "Can't set ai_platform_serving_args and serving_model_dir at "
             "the same time. Choose one deployment option.")
 
+    output = example_gen_pb2.Output(
+        split_config=example_gen_pb2.SplitConfig(splits=[
+            example_gen_pb2.SplitConfig.Split(name='train', hash_buckets=99),
+            example_gen_pb2.SplitConfig.Split(name='eval', hash_buckets=1)
+        ]))
+
     examples = external_input(data_dir)
-    example_gen = CsvExampleGen(input=examples)
+    example_gen = CsvExampleGen(input=examples, output_config=output)
 
     statistics_gen = StatisticsGen(
         examples=example_gen.outputs['examples'])
@@ -106,10 +112,8 @@ def init_components(data_dir, module_file,
         from tfx.extensions.google_cloud_ai_platform.pusher import executor as ai_platform_pusher_executor
         pusher_kwargs.update({
             "custom_executor_spec": executor_spec.ExecutorClassSpec(ai_platform_pusher_executor.Executor),
-            "custom_config": {"custom_config": {
-                ai_platform_pusher_executor.SERVING_ARGS_KEY: ai_platform_serving_args
-                }
-            }
+            "custom_config": {
+                ai_platform_pusher_executor.SERVING_ARGS_KEY: ai_platform_serving_args}
         })
     elif serving_model_dir:
         pusher_kwargs.update({

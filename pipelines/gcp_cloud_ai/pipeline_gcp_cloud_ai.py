@@ -15,7 +15,7 @@ from tfx.orchestration.kubeflow import kubeflow_dag_runner
 from pipelines.base_pipeline import init_components  # noqa
 
 
-pipeline_name = 'consumer_complaint_pipeline_gcp_cloud_ai'
+pipeline_name = 'consumer_complaint_pipeline_cloud_ai_to_cloud_bucket'
 
 # temp yaml file for Kubeflow Pipelines
 output_filename = f"{pipeline_name}.yaml"
@@ -24,11 +24,12 @@ output_dir = os.path.join(os.getcwd(), 'pipelines', 'gcp_cloud_ai', 'argo_pipeli
 # Directory and data locations (uses Google Cloud Storage).
 input_bucket = 'gs://consumer_complaint_gcp_cloud_ai'
 output_bucket = 'gs://consumer_complaint_gcp_cloud_ai'
-data_dir = module_file = os.path.join(input_bucket, 'data')
+data_dir = os.path.join(input_bucket, 'data')
 
-tfx_root = os.path.join(output_bucket, 'tfx')
+tfx_root = os.path.join(output_bucket, 'tfx_pipeline')
 pipeline_root = os.path.join(tfx_root, pipeline_name)
 ai_platform_distributed_training = False
+serving_model_dir = os.path.join(output_bucket, 'serving_model_dir')
 
 # Google Cloud Platform project id to use when deploying this pipeline.
 project_id = 'oreilly-book'  # <--- needs update by the user
@@ -117,10 +118,11 @@ beam_pipeline_args = [
 if __name__ == '__main__':
 
     absl.logging.set_verbosity(absl.logging.INFO)
-    components = init_components(
-                        data_dir, module_file, 
-                        ai_platform_training_args=ai_platform_training_args, 
-                        ai_platform_serving_args=ai_platform_serving_args)
+    components = init_components(data_dir, module_file, 
+                                 ai_platform_training_args=ai_platform_training_args, 
+                                 serving_model_dir=serving_model_dir,
+                                 # ai_platform_serving_args=ai_platform_serving_args
+                                )
 
     p = pipeline.Pipeline(pipeline_name=pipeline_name,
                           pipeline_root=pipeline_root,
