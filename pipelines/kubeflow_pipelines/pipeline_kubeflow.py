@@ -32,7 +32,7 @@ data_dir = os.path.join(persistent_volume_mount, 'data')
 module_file = os.path.join(persistent_volume_mount, 'components', 'module.py')
 
 # pipeline outputs
-output_base = os.path.join(persistent_volume_mount, 'output', pipeline_name)
+output_base = os.path.join(persistent_volume_mount, 'output')
 serving_model_dir = os.path.join(output_base, pipeline_name)
 
 
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
     tfx_image = os.environ.get('KUBEFLOW_TFX_IMAGE', 'hanneshapke/ml-pipelines-tfx-custom:0.21.4')
 
-    components = init_components(data_dir, module_file, serving_model_dir, 
+    components = init_components(data_dir, module_file, 
+                                 serving_model_dir=serving_model_dir, 
                                  training_steps=100, eval_steps=100)
 
     runner_config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
@@ -73,9 +74,9 @@ if __name__ == '__main__':
                                  persistent_volume_mount)
             ]))
 
-    pipeline = init_kubeflow_pipeline(components, output_base, direct_num_workers=0)
+    p = init_kubeflow_pipeline(components, output_base, direct_num_workers=0)
     output_filename = f"{pipeline_name}.yaml"
     kubeflow_dag_runner.KubeflowDagRunner(config=runner_config, 
                                           output_dir=output_dir, 
-                                          output_filename=output_filename).run(pipeline)
+                                          output_filename=output_filename).run(p)
                                           

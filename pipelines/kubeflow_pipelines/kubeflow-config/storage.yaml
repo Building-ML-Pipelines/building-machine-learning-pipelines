@@ -11,7 +11,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   capacity:
-    storage: 30Gi
+    storage: 20Gi
   claimRef:
     apiVersion: v1
     kind: PersistentVolumeClaim
