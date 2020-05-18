@@ -14,10 +14,10 @@ import logging
 
 
 # Initial dataset source
-DATASET_URL = "https://raw.githubusercontent.com/plotly/datasets/master/26k-consumer-complaints.csv"
+DATASET_URL = "http://bit.ly/building-ml-pipelines-dataset"
 
 # Initial local dataset location
-LOCAL_FILE_NAME = "data/26k-consumer-complaints.csv"
+LOCAL_FILE_NAME = "data/tmp-consumer-complaints.csv"
 
 def download_dataset(url=DATASET_URL):
     """download_dataset downloads the remote dataset to a local path
@@ -84,7 +84,7 @@ def _update_col_names(x, i):
 
 def clean_zip_code(x):
     if x:
-        return str(int(float(x)))
+        return x.replace("XX", "00")
     else:
         return '99999'
 
@@ -99,7 +99,7 @@ def update_headers():
         None
     """
 
-    modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0] + "-modified.csv"
+    modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0].replace("tmp-", "") + ".csv"
 
     with open(LOCAL_FILE_NAME, 'r', newline='', encoding='utf8') as input_file, open(modified_file_name, 'w', newline='', encoding='ascii', errors='ignore') as output_file:
         r = csv.reader(input_file)
