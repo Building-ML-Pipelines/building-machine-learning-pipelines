@@ -36,7 +36,7 @@ TEXT_FEATURES = {
 def transformed_name(key):
     return key + '_xf'
 
-def fill_in_missing(x, to_string=False):
+def fill_in_missing(x):
     """Replace missing values in a SparseTensor.
 
     Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
@@ -48,12 +48,10 @@ def fill_in_missing(x, to_string=False):
     Returns:
       A rank 1 tensor where missing values of `x` have been filled in.
     """
-    default_value = '' if x.dtype == tf.string or to_string else 0
-
-    if type(x) == tf.SparseTensor:
-        x = tf.sparse.to_dense(
-            tf.SparseTensor(x.indices, x.values, [x.dense_shape[0], 1]), default_value)
-    return tf.squeeze(x, axis=1)
+    default_value = '' if x.dtype == tf.string else 0
+    if isinstance(x, tf.SparseTensor):
+        x = tf.sparse.to_dense(x, default_value)
+    return tf.reshape(x, shape=[-1])
 
 
 def convert_num_to_one_hot(label_tensor, num_labels=2):
@@ -99,7 +97,7 @@ def preprocessing_fn(inputs):
     for key in ONE_HOT_FEATURES.keys():
         dim = ONE_HOT_FEATURES[key]
         int_value = tft.compute_and_apply_vocabulary(
-            fill_in_missing(inputs[key], to_string=True), top_k=dim + 1)
+            fill_in_missing(inputs[key]), top_k=dim + 1)
         outputs[transformed_name(key)] = convert_num_to_one_hot(
             int_value, num_labels=dim + 1)
 
@@ -114,7 +112,7 @@ def preprocessing_fn(inputs):
         
     for key in TEXT_FEATURES.keys():
         outputs[transformed_name(key)] = \
-            fill_in_missing(inputs[key], to_string=True)
+            fill_in_missing(inputs[key])
 
     outputs[transformed_name(LABEL_KEY)] = fill_in_missing(inputs[LABEL_KEY])
         
