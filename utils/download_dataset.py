@@ -9,6 +9,7 @@ import csv
 import os
 import urllib3
 import shutil
+import pandas as pd
 
 import logging
 
@@ -17,7 +18,7 @@ import logging
 DATASET_URL = "http://bit.ly/building-ml-pipelines-dataset"
 
 # Initial local dataset location
-LOCAL_FILE_NAME = "data/tmp-consumer-complaints.csv"
+LOCAL_FILE_NAME = "data/tmp_consumer_complaints.csv"
 
 def download_dataset(url=DATASET_URL):
     """download_dataset downloads the remote dataset to a local path
@@ -63,35 +64,10 @@ def check_execution_path():
         return False
     return True
 
-def _update_col_names(x, i):
-    """Internal helper function to convert the names of the initial dataset headers
 
-    Keyword Arguments:
-        x {string} -- name of the column (can be None)
-        i {integer} -- integer representing the number of the column
-    Returns:
-        string - returns simplified string version of the column.
-                 If the column didn't have a name, it return "col_{number of the column}"
-    """
-    if x != "":
-        x = x.replace(" ", "_")
-        x = x.replace("-", "_")
-        x = x.replace("?", "")
-    else:
-        x = f"col_{i}"
-    return x.lower()
-
-
-def clean_zip_code(x):
-    if x:
-        return x.replace("XX", "00")
-    else:
-        return '99999'
-
-
-def update_headers():
-    """update_headers updates the header row of the csv file and write the entire file to a new
-    file with the file name appendix "_modified.csv"
+def update_csv():
+    """update_csv updates the header row of the csv file, preprocesses the data and writes the entire file to a new
+    file with the file name appendix "with_narrative.csv"
 
     Keyword Arguments:
         None
@@ -99,22 +75,22 @@ def update_headers():
         None
     """
 
-    modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0].replace("tmp-", "") + ".csv"
+    modified_file_name = os.path.splitext(LOCAL_FILE_NAME)[0].replace("tmp-", "") + "_with_narrative.csv"
 
-    with open(LOCAL_FILE_NAME, 'r', newline='', encoding='utf8') as input_file, open(modified_file_name, 'w', newline='', encoding='ascii', errors='ignore') as output_file:
-        r = csv.reader(input_file)
-        w = csv.writer(output_file)
+    feature_cols=["product", "sub_product", "issue", "sub_issue", "state", "zipcode", "company", "company_response_to_consumer", "timely_response", "consumer_disputed?", "consumer_complaint_narrative"]
+    df = pd.read_csv(LOCAL_FILE_NAME, usecols=feature_cols)
 
-        header = next(r, "")  # update the header row
-        new_header = [_update_col_names(col_name, i) for i, col_name in enumerate(header)]
-        w.writerow(new_header)
+    df.columns = df.columns.str.replace(' ','_').str.replace('?', '')
+    df = df.rename({'zipcode': 'zip_code', 'company_response_to_consumer': 'company_response'}, axis=1)
+    df = df[df['consumer_complaint_narrative'].notnull()]
+    df['c'] = df['consumer_disputed'].map({'Yes': 1, 'No': 0})
+    df = df.drop('consumer_disputed', axis=1)
+    df = df.rename(columns={"c": "consumer_disputed"})
+    df = df.sample(frac=1, replace=False).reset_index(drop=True)
+    df['zip_code'] = df['zip_code'].str.replace('XX', '00')
 
-        # copy the rest
-        zipcode_idx = new_header.index('zip_code')
-        for row in r:
-            row[zipcode_idx] = clean_zip_code(row[zipcode_idx])
-            w.writerow(row)
-        logging.info(f"CSV header updated and rewriten to {modified_file_name}")
+    df.to_csv(modified_file_name, index=False)
+    logging.info(f"CSV header updated and rewriten to {modified_file_name}")
 
 
 if __name__ == "__main__":
@@ -125,7 +101,7 @@ if __name__ == "__main__":
     if check_execution_path():
         create_folder()
         download_dataset()
-        update_headers()
+        update_csv()
         os.remove(LOCAL_FILE_NAME)
 
     logging.info('Finished')

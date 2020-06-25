@@ -1,3 +1,4 @@
-tensorflow==2.1.0
-tfx==0.21.3
-tqdm==4.42.0
+tensorflow==2.2.0
+tensorflow_hub==0.8.0
+tensorflow_privacy==0.3.0
+tfx==0.22.0
