@@ -1,4 +1,4 @@
-FROM tensorflow/tfx:0.21.4
+FROM tensorflow/tfx:0.22.0
 
 LABEL maintainer="hannes.hapke@gmail.com"
 

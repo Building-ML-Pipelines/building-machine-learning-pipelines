@@ -4,7 +4,7 @@ Code repository for the O'Reilly publication ["Building Machine Learning Pipelin
 
 ## Set up the demo project
 
-Download the initial dataset. From the root of this repository, execute 
+Download the initial dataset. From the root of this repository, execute
 
 ```
 python3 utils/download_dataset.py

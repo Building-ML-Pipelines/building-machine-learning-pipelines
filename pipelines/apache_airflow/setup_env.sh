@@ -7,10 +7,10 @@ NORMAL=$(tput sgr0)
 # printf "${GREEN}Installing TFX workshop${NORMAL}\n\n"
 # # TF/TFX prereqs
 # printf "${GREEN}Installing TensorFlow${NORMAL}\n"
-# pip install tensorflow==2.1.0 
+# pip install tensorflow==2.1.0
 
 # printf "${GREEN}Installing TFX${NORMAL}\n"
-# pip install tfx==0.21.3 
+# pip install tfx==0.21.3
 
 printf "${GREEN}Installing Google API Client${NORMAL}\n"
 pip install google-api-python-client

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 """
@@ -8,8 +7,6 @@ Each data chunck will contain all records between the start date
 of the records (2011-12-01) and the end date
 """
 
-import re
-import string
 import pandas as pd
 
 # TODO: slugify all headers
@@ -28,21 +25,21 @@ def update_headers(df):
     df.columns = [_update_header(i) for i in df.columns]
 
 
-def read_data(path='../data/Consumer_complaints.csv'):
+def read_data(path="../data/Consumer_complaints.csv"):
     print("Reading the data ...")
     df = pd.read_csv(path)
-    df = df.replace(r'\s', ' ', regex=True)
-    df["Issue"] = df["Issue"].replace(r',', ' ', regex=True)
-    df['Date received'] = pd.to_datetime(df['Date received'])
+    df = df.replace(r"\s", " ", regex=True)
+    df["Issue"] = df["Issue"].replace(r",", " ", regex=True)
+    df["Date received"] = pd.to_datetime(df["Date received"])
     # df = df.sort_values('Date received')
     update_headers(df)
     return df
 
 
-def split_by_date(df, end_date='2011-12-07'):
+def split_by_date(df, end_date="2011-12-07"):
     # start date 2011-12-01
     # end date 2017-11-15
-    return df.loc[df['Date_received'] <= end_date]
+    return df.loc[df["Date_received"] <= end_date]
 
 
 def save_data(df, path):
@@ -55,4 +52,4 @@ if __name__ == "__main__":
     end_date = "2011-12-31"
     df = read_data()
     sub_df = split_by_date(df, end_date)
-    save_data(sub_df, f"../airflow/data/pipeline_data.csv")
+    save_data(sub_df, "../airflow/data/pipeline_data.csv")

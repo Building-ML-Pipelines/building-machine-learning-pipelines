@@ -144,3 +144,4 @@ pipelines/gcp_cloud_ai/argo_pipeline_files/*.tar.gz
 pipelines/gcp_cloud_ai/argo_pipeline_files/*.tgz
 pipelines/gcp_cloud_ai/argo_pipeline_files/*.zip
 data/
+.artifacts/
