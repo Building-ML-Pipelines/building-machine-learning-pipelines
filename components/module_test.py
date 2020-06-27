@@ -17,7 +17,6 @@ class ExecutorTest(tf.test.TestCase):
 
     def test_fill_in_missing_sparse_tensor(self):
 
-        # test_data = tf.constant(["", "test"])
         sparse_tensor = tf.SparseTensor(
             indices=[[1, 0], [2, 0]], values=["wow", "test"], dense_shape=[3, 1]
         )
