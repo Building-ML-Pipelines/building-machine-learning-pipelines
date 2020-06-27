@@ -1,3 +1,5 @@
+from typing import Union
+
 import tensorflow as tf
 import tensorflow_transform as tft
 
@@ -23,22 +25,26 @@ def transformed_name(key):
     return key + "_xf"
 
 
-def fill_in_missing(x):
+def fill_in_missing(x: Union[tf.Tensor, tf.SparseTensor]) -> tf.Tensor:
     """Replace missing values in a SparseTensor.
 
-    Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
+    Fills in missing values of `x` with '' or 0, and converts to a
+    dense tensor.
 
     Args:
-      x: A `SparseTensor` of rank 2.  Its dense shape should have size at most 1
-        in the second dimension.
+      x: A `SparseTensor` of rank 2.  Its dense shape should have
+        size at most 1 in the second dimension.
 
     Returns:
       A rank 1 tensor where missing values of `x` have been filled in.
     """
-    default_value = "" if x.dtype == tf.string else 0
-    if isinstance(x, tf.SparseTensor):
-        x = tf.sparse.to_dense(x, default_value)
-    return tf.reshape(x, shape=[-1])
+    if isinstance(x, tf.sparse.SparseTensor):
+        default_value = "" if x.dtype == tf.string else 0
+        x = tf.sparse.to_dense(
+            tf.SparseTensor(x.indices, x.values, [x.dense_shape[0], 1]),
+            default_value,
+        )
+    return tf.squeeze(x, axis=1)
 
 
 def convert_num_to_one_hot(label_tensor, num_labels=2):
