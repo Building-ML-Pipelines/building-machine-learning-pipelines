@@ -1,5 +1,7 @@
 import os
 
+from typing import Union
+
 import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_transform as tft
@@ -27,11 +29,11 @@ BUCKET_FEATURES = {"zip_code": 10}
 TEXT_FEATURES = {"consumer_complaint_narrative": None}
 
 
-def transformed_name(key):
+def transformed_name(key: str) -> str:
     return key + "_xf"
 
 
-def fill_in_missing(x):
+def fill_in_missing(x: Union[tf.Tensor, tf.SparseTensor]) -> tf.Tensor:
     """Replace missing values in a SparseTensor.
 
     Fills in missing values of `x` with '' or 0, and converts to a
@@ -44,13 +46,18 @@ def fill_in_missing(x):
     Returns:
       A rank 1 tensor where missing values of `x` have been filled in.
     """
-    default_value = "" if x.dtype == tf.string else 0
-    if isinstance(x, tf.SparseTensor):
-        x = tf.sparse.to_dense(x, default_value)
-    return tf.reshape(x, shape=[-1])
+    if isinstance(x, tf.sparse.SparseTensor):
+        default_value = "" if x.dtype == tf.string else 0
+        x = tf.sparse.to_dense(
+            tf.SparseTensor(x.indices, x.values, [x.dense_shape[0], 1]),
+            default_value,
+        )
+    return tf.squeeze(x, axis=1)
 
 
-def convert_num_to_one_hot(label_tensor, num_labels=2):
+def convert_num_to_one_hot(
+    label_tensor: tf.Tensor, num_labels: int = 2
+) -> tf.Tensor:
     """
     Convert a label (0 or 1) into a one-hot vector
     Args:
@@ -62,7 +69,7 @@ def convert_num_to_one_hot(label_tensor, num_labels=2):
     return tf.reshape(one_hot_tensor, [-1, num_labels])
 
 
-def convert_zip_code(zipcode):
+def convert_zip_code(zipcode: str) -> tf.float32:
     """
     Convert a zipcode string to int64 representation. In the dataset the
     zipcodes are anonymized by repacing the last 3 digits to XXX. We are
@@ -80,7 +87,7 @@ def convert_zip_code(zipcode):
     return zipcode
 
 
-def preprocessing_fn(inputs):
+def preprocessing_fn(inputs: tf.Tensor) -> tf.Tensor:
     """tf.transform's callback function for preprocessing inputs.
 
     Args:
@@ -123,7 +130,7 @@ def preprocessing_fn(inputs):
 ################
 
 
-def get_model(show_summary=True):
+def get_model(show_summary: bool = True) -> tf.keras.models.Model:
     """
     This function defines a Keras model and returns the model as a Keras object.
     """
