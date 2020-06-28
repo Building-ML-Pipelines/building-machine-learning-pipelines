@@ -1,5 +1,3 @@
-# https://github.com/tensorflow/tfx/blob/master/tfx/examples/airflow_workshop/setup/dags/taxi_pipeline_solution.py
-
 import os
 import datetime
 
