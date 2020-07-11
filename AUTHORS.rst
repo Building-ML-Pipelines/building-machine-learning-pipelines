@@ -9,3 +9,4 @@ Maintainers
 
 Contributors
 ------------
+* Timo Cornelius Metzger
