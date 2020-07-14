@@ -3,7 +3,7 @@ name: Create PR
 about: Create pull requests
 title: Fix for ... [BUG]
 labels: ''
-assignees: hanneshapke
+assignees: hanneshapke, drcat101
 
 ---
 
