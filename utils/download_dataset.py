@@ -15,7 +15,7 @@ import urllib3
 DATASET_URL = "http://bit.ly/building-ml-pipelines-dataset"
 
 # Initial local dataset location
-LOCAL_FILE_NAME = "data/tmp_consumer_complaints.csv"
+LOCAL_FILE_NAME = "data/tmp_consumer_complaints_with_narrative.csv"
 
 
 def download_dataset(url=DATASET_URL):
@@ -29,6 +29,9 @@ def download_dataset(url=DATASET_URL):
     Returns:
         None
     """
+    # disable insecure https warning
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     c = urllib3.PoolManager()
     with c.request("GET", url, preload_content=False) as res, open(
         LOCAL_FILE_NAME, "wb"
@@ -81,22 +84,20 @@ def update_csv():
     """
 
     file_name_part = os.path.splitext(LOCAL_FILE_NAME)[0]
-    modified_file_name = (
-        file_name_part.replace("tmp-", "") + "_with_narrative.csv"
-    )
+    modified_file_name = file_name_part.replace("tmp_", "") + ".csv"
 
     feature_cols = [
         "product",
         "sub_product",
         "issue",
         "sub_issue",
+        "consumer_complaint_narrative",
+        "company",
         "state",
         "zip_code",
-        "company",
         "company_response",
         "timely_response",
         "consumer_disputed",
-        "consumer_complaint_narrative",
     ]
     df = pd.read_csv(LOCAL_FILE_NAME, usecols=feature_cols)
 
