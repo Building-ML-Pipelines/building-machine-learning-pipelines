@@ -1,4 +1,4 @@
-""" Example module to cnvert csv data to TFRecords
+""" Example module to convert csv data to TFRecords
 """
 
 import csv
@@ -27,7 +27,7 @@ def clean_rows(row):
     return row
 
 
-original_data_file = "../../data/consumer-complaints.csv"
+original_data_file = "../../data/consumer_complaints_with_narrative.csv"
 tfrecords_filename = "consumer-complaints.tfrecords"
 tf_record_writer = tf.io.TFRecordWriter(tfrecords_filename)
 
