@@ -12,5 +12,5 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
-  # - export PYTHONPATH=$PYTHONPATH:`pwd`
+  - export PYTHONPATH=$PYTHONPATH:`pwd`
   - pytest . tests/
