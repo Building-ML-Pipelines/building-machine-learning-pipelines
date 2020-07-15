@@ -91,23 +91,14 @@ def update_csv():
         "issue",
         "sub_issue",
         "state",
-        "zipcode",
+        "zip_code",
         "company",
-        "company_response_to_consumer",
+        "company_response",
         "timely_response",
-        "consumer_disputed?",
+        "consumer_disputed",
         "consumer_complaint_narrative",
     ]
     df = pd.read_csv(LOCAL_FILE_NAME, usecols=feature_cols)
-
-    df.columns = df.columns.str.replace(" ", "_").str.replace("?", "")
-    df = df.rename(
-        {
-            "zipcode": "zip_code",
-            "company_response_to_consumer": "company_response",
-        },
-        axis=1,
-    )
 
     df = df[df["consumer_complaint_narrative"].notnull()]
     df["c"] = df["consumer_disputed"].map({"Yes": 1, "No": 0})
