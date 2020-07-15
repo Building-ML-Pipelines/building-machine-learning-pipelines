@@ -2,9 +2,9 @@ dist: xenial
 language: python
 sudo: false
 python:
-  - '3.6'
-  - '3.7'
-  - '3.8'
+  - "3.6"
+  - "3.7"
+  - "3.8"
 
 install:
   - pip install -U -r requirements/requirements.txt
@@ -12,4 +12,5 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
+  - export PYTHONPATH=$PYTHONPATH:`pwd`
   - pytest . tests/
