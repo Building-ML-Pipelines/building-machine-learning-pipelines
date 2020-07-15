@@ -12,5 +12,5 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
-  - export PYTHONPATH=$PYTHONPATH:`pwd`
-  - pytest . tests/
+  - export PYTHONPATH=$PYTHONPATH:`pwd`/chapters/appendix_c/tfx_template_example
+  - pytest . chapters/appendix_c/tfx_template_example/
