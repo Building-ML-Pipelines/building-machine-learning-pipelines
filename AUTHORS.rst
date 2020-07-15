@@ -10,3 +10,8 @@ Maintainers
 Contributors
 ------------
 * Timo Cornelius Metzger
+* Snehan Kekre (@snehankekre)
+
+
+
+Thanks to all contributors!

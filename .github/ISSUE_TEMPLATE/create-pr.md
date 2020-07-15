@@ -3,7 +3,7 @@ name: Create PR
 about: Create pull requests
 title: Fix for ... [BUG]
 labels: ''
-assignees: hanneshapke
+assignees: hanneshapke, drcat101
 
 ---
 
@@ -17,3 +17,4 @@ Check that your pull request meets these guidelines before you submit it:
 
 1. If the pull request adds or changes functionality, it should include updated tests.
 2. Make sure that all tests run by ``make test`` pass.
+3. Add your name and/or Github username to the `AUTHORS.rst` file under "Contributors", so that your contribution is listed upon merging your PR. Thank you!
