@@ -102,9 +102,6 @@ def update_csv():
     df = pd.read_csv(LOCAL_FILE_NAME, usecols=feature_cols)
 
     df = df[df["consumer_complaint_narrative"].notnull()]
-    df["c"] = df["consumer_disputed"].map({"Yes": 1, "No": 0})
-    df = df.drop("consumer_disputed", axis=1)
-    df = df.rename(columns={"c": "consumer_disputed"})
     df = df.sample(frac=1, replace=False).reset_index(drop=True)
     df["zip_code"] = df["zip_code"].str.replace("XX", "00")
 
