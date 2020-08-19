@@ -69,24 +69,6 @@ def convert_num_to_one_hot(
     return tf.reshape(one_hot_tensor, [-1, num_labels])
 
 
-def convert_zip_code(zipcode: str) -> tf.float32:
-    """
-    Convert a zipcode string to int64 representation. In the dataset the
-    zipcodes are anonymized by repacing the last 3 digits to XXX. We are
-    replacing those characters to 000 to simplify the bucketing later on.
-
-    Args:
-        str: zipcode
-    Returns:
-        zipcode: int64
-    """
-    if zipcode == "":
-        zipcode = "00000"
-    zipcode = tf.strings.regex_replace(zipcode, r"X{0,5}", "0")
-    zipcode = tf.strings.to_number(zipcode, out_type=tf.float32)
-    return zipcode
-
-
 def preprocessing_fn(inputs: tf.Tensor) -> tf.Tensor:
     """tf.transform's callback function for preprocessing inputs.
 
@@ -109,7 +91,7 @@ def preprocessing_fn(inputs: tf.Tensor) -> tf.Tensor:
 
     for key, bucket_count in BUCKET_FEATURES.items():
         temp_feature = tft.bucketize(
-            convert_zip_code(fill_in_missing(inputs[key])),
+            fill_in_missing(inputs[key]),
             bucket_count,
             always_return_num_quantiles=False,
         )
