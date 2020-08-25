@@ -53,5 +53,8 @@ The following subfolders contain stand-alone code for individual chapters.
 ### Model analysis
 Chapter 7. Stand-alone code for TFMA, Fairness Indicators, What-If Tool. Note that these notebooks will not work in JupyterLab.
 
+### Advanced TFX
+Chapter 10. Notebook outlinining the implementation of custom TFX components from scratch and by inheriting existing functionality. Presented at the Apache Beam Summit 2020.
+
 ### Data privacy
 Chapter 14. Code for training a differentially private version of the demo project. Note that the TF-Privacy module only supports TF 1.x as of June 2020.
