@@ -23,7 +23,7 @@ def _int64_feature(value):
 
 def clean_rows(row):
     if not row["zip_code"]:
-        row["zip_code"] = "9999"
+        row["zip_code"] = "99999"
     return row
 
 
