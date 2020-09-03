@@ -29,6 +29,8 @@ BUCKET_FEATURES = {"zip_code": 10}
 TEXT_FEATURES = {"consumer_complaint_narrative": None}
 
 
+os.environ["TFHUB_CACHE_DIR"] = 'tmp/tfhub'
+
 def transformed_name(key: str) -> str:
     return key + "_xf"
 
@@ -108,11 +110,15 @@ def preprocessing_fn(inputs: tf.Tensor) -> tf.Tensor:
         )
 
     for key, bucket_count in BUCKET_FEATURES.items():
-        temp_feature = tft.bucketize(
-            convert_zip_code(fill_in_missing(inputs[key])),
-            bucket_count,
-            always_return_num_quantiles=False,
-        )
+
+        dense_feature = fill_in_missing(inputs[key])
+        if key == "zip_code" and dense_feature.dtype == tf.string:
+            dense_feature = convert_zip_code(dense_feature)
+        else:
+            dense_feature = tf.cast(dense_feature, tf.float32)
+
+        temp_feature = tft.bucketize(dense_feature, bucket_count,
+                                     always_return_num_quantiles=False)
         outputs[transformed_name(key)] = convert_num_to_one_hot(
             temp_feature, num_labels=bucket_count + 1
         )
