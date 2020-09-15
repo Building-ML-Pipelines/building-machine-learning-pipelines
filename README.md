@@ -58,3 +58,7 @@ Chapter 10. Notebook outlinining the implementation of custom TFX components fro
 
 ### Data privacy
 Chapter 14. Code for training a differentially private version of the demo project. Note that the TF-Privacy module only supports TF 1.x as of June 2020.
+
+## Version notes
+
+- As of 9/14/20, TFX does not support Python 3.8
