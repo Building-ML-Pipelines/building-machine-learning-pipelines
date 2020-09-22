@@ -10,7 +10,7 @@ Download the initial dataset. From the root of this repository, execute
 python3 utils/download_dataset.py
 ```
 
-After this script runs, you should have a `data` folder containing the file `consumer_complaints_with_narrative.csv`. 
+After this script runs, you should have a `data` folder containing the file `consumer_complaints_with_narrative.csv`.
 
 ## The dataset
 
@@ -54,11 +54,13 @@ The following subfolders contain stand-alone code for individual chapters.
 Chapter 7. Stand-alone code for TFMA, Fairness Indicators, What-If Tool. Note that these notebooks will not work in JupyterLab.
 
 ### Advanced TFX
-Chapter 10. Notebook outlinining the implementation of custom TFX components from scratch and by inheriting existing functionality. Presented at the Apache Beam Summit 2020.
+Chapter 10. Notebook outlining the implementation of custom TFX components from scratch and by inheriting existing functionality. Presented at the Apache Beam Summit 2020.
 
 ### Data privacy
 Chapter 14. Code for training a differentially private version of the demo project. Note that the TF-Privacy module only supports TF 1.x as of June 2020.
 
 ## Version notes
 
-- As of 9/14/20, TFX does not support Python 3.8
+- The code was written and tested for version 0.22. Due to tiny TFX bugs, the pipelines currently don't work on the releases 0.23 and 0.24-rc0. Github issues have been filed with the TFX team specifically for the book pipelines ([Issue 2500](https://github.com/tensorflow/tfx/issues/2500#issuecomment-695363847)). We will update the repository once the issue is resolved.
+
+- As of 9/14/20, TFX does not support Python 3.8. The support will be available with version 0.24, expected  in the coming days/weeks.
