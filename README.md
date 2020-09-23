@@ -61,6 +61,9 @@ Chapter 14. Code for training a differentially private version of the demo proje
 
 ## Version notes
 
-- The code was written and tested for version 0.22. Due to tiny TFX bugs, the pipelines currently don't work on the releases 0.23 and 0.24-rc0. Github issues have been filed with the TFX team specifically for the book pipelines ([Issue 2500](https://github.com/tensorflow/tfx/issues/2500#issuecomment-695363847)). We will update the repository once the issue is resolved.
+The code was written and tested for version 0.22.
 
-- As of 9/14/20, TFX does not support Python 3.8. The support will be available with version 0.24, expected  in the coming days/weeks.
+- As of 9/22/20, the interactive pipeline runs on TFX version 0.24.0rc1.
+Due to tiny TFX bugs, the pipelines currently don't work on the releases 0.23 and 0.24-rc0. Github issues have been filed with the TFX team specifically for the book pipelines ([Issue 2500](https://github.com/tensorflow/tfx/issues/2500#issuecomment-695363847)). We will update the repository once the issue is resolved.
+
+- As of 9/14/20, TFX only supports Python 3.8 with version >0.24.0rc0. 
