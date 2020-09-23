@@ -1,7 +1,7 @@
+pandas==0.22.0
 tensorboard_plugin_fairness_indicators==0.0.5
 tensorflow==2.2.0
 tensorflow_hub==0.8.0
 tensorflow_privacy==0.3.0
 tfx==0.22.0
 witwidget==1.7.0
-pandas==1.1.2
