@@ -51,7 +51,7 @@ ai_platform_training_args = {
     # You can specify a custom container here. If not specified, TFX will
     # use a public container image matching the installed version of TFX.
     "masterConfig": {
-        "imageUri": "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0"
+        "imageUri": "gcr.io/{}/ml-pipelines-tfx-custom:0.22.0".format(project_id)
     },
     # important: Note that if you do specify a custom container, ensure the
     # entrypoint calls into TFX's run_executor script

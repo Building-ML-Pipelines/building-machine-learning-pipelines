@@ -28,6 +28,7 @@ output_base = os.path.join(output_bucket, "output")
 tfx_root = os.path.join(output_bucket, "tfx_pipeline")
 pipeline_root = os.path.join(tfx_root, pipeline_name)
 serving_model_dir = os.path.join(output_bucket, "serving_model_dir")
+gcp_project_id = "oreilly-book"
 
 
 def init_kubeflow_pipeline(
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
     tfx_image = os.environ.get(
         "KUBEFLOW_TFX_IMAGE",
-        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0",
+        "gcr.io/{}/ml-pipelines-tfx-custom:0.22.0".format(gcp_project_id),
     )
 
     from pipelines.base_pipeline import init_components
