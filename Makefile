@@ -20,7 +20,7 @@ develop: setup-git install-deps install-pre-commit
 
 install-deps:
 	pip install -r requirements/requirements.txt
-	pip install -r requirements/test-requirements.txt
+	pip install -r requirements/test_requirements.txt
 
 install-pre-commit:
 	pip install "pre-commit>=1.10.1,<1.11.0"
