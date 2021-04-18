@@ -1,2 +1,0 @@
-pytest==5.4.3
-pytest-flakes==4.0.0

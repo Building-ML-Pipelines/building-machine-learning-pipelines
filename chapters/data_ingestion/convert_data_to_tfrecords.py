@@ -26,12 +26,13 @@ def clean_rows(row):
         row["zip_code"] = "99999"
     return row
 
+
 def convert_zipcode_to_int(zipcode):
     if isinstance(zipcode, str) and "XX" in zipcode:
         zipcode = zipcode.replace("XX", "00")
     int_zipcode = int(zipcode)
     return int_zipcode
-        
+
 
 original_data_file = "../../data/consumer_complaints_with_narrative.csv"
 tfrecords_filename = "consumer-complaints.tfrecords"
@@ -49,7 +50,9 @@ with open(original_data_file) as csv_file:
                     "issue": _bytes_feature(row["issue"]),
                     "sub_issue": _bytes_feature(row["sub_issue"]),
                     "state": _bytes_feature(row["state"]),
-                    "zip_code": _int64_feature(convert_zipcode_to_int(row["zip_code"])),
+                    "zip_code": _int64_feature(
+                        convert_zipcode_to_int(row["zip_code"])
+                    ),
                     "company": _bytes_feature(row["company"]),
                     "company_response": _bytes_feature(row["company_response"]),
                     "timely_response": _bytes_feature(row["timely_response"]),
