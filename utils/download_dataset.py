@@ -8,7 +8,6 @@ import logging
 import os
 import shutil
 
-import pandas as pd
 import urllib3
 
 # Initial dataset source
