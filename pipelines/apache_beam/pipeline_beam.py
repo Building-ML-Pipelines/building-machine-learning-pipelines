@@ -2,9 +2,10 @@ import os
 import sys
 from typing import Text
 
-import absl
+from absl import logging
 from tfx.orchestration import metadata, pipeline
 from tfx.orchestration.beam.beam_dag_runner import BeamDagRunner
+
 
 pipeline_name = "consumer_complaint_pipeline_beam"
 
@@ -25,7 +26,7 @@ def init_beam_pipeline(
     components, pipeline_root: Text, direct_num_workers: int
 ) -> pipeline.Pipeline:
 
-    absl.logging.info(f"Pipeline root set to: {pipeline_root}")
+    logging.info(f"Pipeline root set to: {pipeline_root}")
     beam_arg = [
         f"--direct_num_workers={direct_num_workers}",
         f"--requirements_file={requirement_file}",  # optional
@@ -46,7 +47,7 @@ def init_beam_pipeline(
 
 if __name__ == "__main__":
 
-    absl.logging.set_verbosity(absl.logging.INFO)
+    logging.set_verbosity(logging.INFO)
 
     module_path = os.getcwd()
     if module_path not in sys.path:
@@ -58,8 +59,8 @@ if __name__ == "__main__":
     components = init_components(
         data_dir,
         module_file,
-        training_steps=50000,
-        eval_steps=10000,
+        training_steps=5000,
+        eval_steps=100,
         serving_model_dir=serving_model_dir,
     )
     direct_num_workers = int(os.cpu_count() / 2)
