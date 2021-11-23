@@ -15,13 +15,13 @@ def init_components(
     training_steps=TRAIN_STEPS,
     eval_steps=EVAL_STEPS,
     serving_model_dir=None,
-    ai_platform_training_args=None,
-    ai_platform_serving_args=None,
+    vertex_training_custom_config=None,
+    vertex_serving_args=None,
 ):
 
-    if serving_model_dir and ai_platform_serving_args:
+    if serving_model_dir and vertex_serving_args:
         raise NotImplementedError(
-            "Can't set ai_platform_serving_args and serving_model_dir at "
+            "Can't set vertex_serving_args and serving_model_dir at "
             "the same time. Choose one deployment option."
         )
 
@@ -67,23 +67,11 @@ def init_components(
         "eval_args": trainer_pb2.EvalArgs(num_steps=eval_steps),
     }
 
-    # if ai_platform_training_args:
-    #     from tfx.extensions.google_cloud_ai_platform.trainer import (
-    #         executor as aip_trainer_executor,
-    #     )
-
-    #     training_kwargs.update(
-    #         {
-    #             "custom_executor_spec": executor_spec.ExecutorClassSpec(
-    #                 aip_trainer_executor.GenericExecutor
-    #             ),
-    #             "custom_config": {
-    #                 aip_trainer_executor.TRAINING_ARGS_KEY: ai_platform_training_args  # noqa
-    #             },
-    #         }
-    #     )
-
-    trainer = tfx.components.Trainer(**training_kwargs)
+    if vertex_training_custom_config:
+        training_kwargs.update({"custom_config": vertex_training_custom_config})
+        trainer = tfx.extensions.google_cloud_ai_platform.Trainer(**training_kwargs)
+    else:
+        trainer = tfx.components.Trainer(**training_kwargs)
 
     model_resolver = tfx.dsl.Resolver(
         strategy_class=tfx.dsl.experimental.LatestBlessedModelStrategy,
@@ -131,42 +119,27 @@ def init_components(
         eval_config=eval_config,
     )
 
-    pusher_kwargs = {
-        "model": trainer.outputs["model"],
-        "model_blessing": evaluator.outputs["blessing"],
-    }
+    if vertex_serving_args:
+        pusher = tfx.extensions.google_cloud_ai_platform.Pusher(
+            model=trainer.outputs["model"],
+            model_blessing=evaluator.outputs["blessing"],
+            custom_config=vertex_serving_args,
+        )
 
-    # if ai_platform_serving_args:
-    #     from tfx.extensions.google_cloud_ai_platform.pusher import (
-    #         executor as aip_pusher_executor,
-    #     )
-
-    #     pusher_kwargs.update(
-    #         {
-    #             "custom_executor_spec": executor_spec.ExecutorClassSpec(
-    #                 aip_pusher_executor.Executor
-    #             ),
-    #             "custom_config": {
-    #                 aip_pusher_executor.SERVING_ARGS_KEY: ai_platform_serving_args  # noqa
-    #             },
-    #         }
-    #     )
-    if serving_model_dir:
-        pusher_kwargs.update(
-            {
-                "push_destination": pusher_pb2.PushDestination(
-                    filesystem=pusher_pb2.PushDestination.Filesystem(
-                        base_directory=serving_model_dir
-                    )
+    elif serving_model_dir:
+        pusher = tfx.components.Pusher(
+            model=trainer.outputs["model"],
+            model_blessing=evaluator.outputs["blessing"],
+            push_destination=pusher_pb2.PushDestination(
+                filesystem=pusher_pb2.PushDestination.Filesystem(
+                    base_directory=serving_model_dir
                 )
-            }
+            ),
         )
     else:
         raise NotImplementedError(
             "Provide ai_platform_serving_args or serving_model_dir."
         )
-
-    pusher = tfx.components.Pusher(**pusher_kwargs)
 
     components = [
         example_gen,

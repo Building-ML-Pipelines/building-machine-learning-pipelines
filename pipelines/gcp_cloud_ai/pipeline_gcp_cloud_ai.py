@@ -1,9 +1,11 @@
 import os
 import sys
 
-import absl
+from absl import logging
+from tfx import v1 as tfx
 from tfx.orchestration import pipeline
 from tfx.orchestration.kubeflow import kubeflow_dag_runner
+
 
 pipeline_name = "consumer_complaint_pipeline_cloud_ai_to_cloud_bucket"
 
@@ -24,83 +26,59 @@ ai_platform_distributed_training = False
 serving_model_dir = os.path.join(output_bucket, "serving_model_dir")
 
 # Google Cloud Platform project id to use when deploying this pipeline.
-project_id = "oreilly-book"  # <--- needs update by the user
+project_id = "~~oreilly-book~~"  # <--- needs update by the user
 
-# Python module file to inject customized logic into the TFX components. The
-# Transform and Trainer both require user-defined functions to run
-# successfully. Copy this from the current directory to a GCS bucket and update
-# the location below.
 module_file = os.path.join(input_bucket, "components", "module.py")
 
-# Region to use for Dataflow jobs and AI Platform jobs.
-#   Dataflow:
-#       https://cloud.google.com/dataflow/docs/concepts/regional-endpoints
-#   AI Platform:
-#       https://cloud.google.com/ml-engine/docs/tensorflow/regions
 gcp_region = "us-central1"
 
-# A dict which contains the training job parameters to be passed to Google
-# Cloud AI Platform. For the full set of parameters supported by Google
-# Cloud AI Platform, refer to
-# https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#Job
-ai_platform_training_args = {
+use_gpu = True
+
+vertex_training_args = {
     "project": project_id,
-    "region": gcp_region,
-    # Starting from TFX 0.14, training on AI Platform uses custom containers:
-    # https://cloud.google.com/ml-engine/docs/containers-overview
-    # You can specify a custom container here. If not specified, TFX will
-    # use a public container image matching the installed version of TFX.
-    "masterConfig": {"imageUri": "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0"},
-    # important: Note that if you do specify a custom container, ensure the
-    # entrypoint calls into TFX's run_executor script
-    # (tfx/scripts/run_executor.py)
+    "worker_pool_specs": [
+        {
+            "machine_spec": {
+                "machine_type": "n1-highmem-8",
+            },
+            "replica_count": 1,
+            "container_spec": {
+                "image_uri": "gcr.io/tfx-oss-public/tfx:{}".format(tfx.__version__),
+            },
+        }
+    ],
 }
 
-if ai_platform_distributed_training:
-
-    # Update ai_platform_training_args if distributed training was enabled.
-    # Number of worker machines used in distributed training.
-    from tfx.orchestration import data_types
-
-    worker_count = data_types.RuntimeParameter(
-        name="worker-count",
-        default=4,
-        ptype=int,
+if use_gpu:
+    vertex_training_args["worker_pool_specs"][0]["machine_spec"].update(
+        {"accelerator_type": "NVIDIA_TESLA_K80", "accelerator_count": 1}
     )
 
-    # Type of worker machines used in distributed training.
-    worker_type = data_types.RuntimeParameter(
-        name="worker-type",
-        default="standard",
-        ptype=str,
-    )
+vertex_training_custom_config = {
+    tfx.extensions.google_cloud_ai_platform.ENABLE_UCAIP_KEY: True,
+    tfx.extensions.google_cloud_ai_platform.UCAIP_REGION_KEY: gcp_region,
+    tfx.extensions.google_cloud_ai_platform.TRAINING_ARGS_KEY: vertex_training_args,
+    "use_gpu": use_gpu,
+}
 
-    ai_platform_training_args.update(
-        {
-            # You can specify the machine types, the number of replicas
-            # for workers and parameter servers.
-            # https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#ScaleTier
-            "scaleTier": "CUSTOM",
-            "masterType": "large_model",
-            "workerType": worker_type,
-            "parameterServerType": "standard",
-            "workerCount": worker_count,
-            "parameterServerCount": 1,
-        }
-    )
 
-# A dict which contains the serving job parameters to be passed to Google
-# Cloud AI Platform. For the full set of parameters supported by Google
-# Cloud AI Platform, refer to
-# https://cloud.google.com/ml-engine/reference/rest/v1/projects.models
-ai_platform_serving_args = {
-    "model_name": "consumer_complaint",
+vertex_serving_spec = {
     "project_id": project_id,
-    # The region to use when serving the model. See available regions here:
-    # https://cloud.google.com/ml-engine/docs/regions
-    # Note that serving currently only supports a single region:
-    # https://cloud.google.com/ml-engine/reference/rest/v1/projects.models#Model
-    "regions": [gcp_region],
+    "endpoint_name": "consumer_complaint",
+    "deployed_model_display_name": "consumer_complaint",
+    "machine_type": "n1-standard-2",
+    "min_replica_count": 1,
+    "max_replica_count": 2,
+    "metadata": (("model_name", "consumer_complaint"),),
+}
+
+vertex_container_image_uri = "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-6:latest"
+
+vertex_serving_args = {
+    tfx.extensions.google_cloud_ai_platform.ENABLE_VERTEX_KEY: True,
+    tfx.extensions.google_cloud_ai_platform.VERTEX_REGION_KEY: gcp_region,
+    tfx.extensions.google_cloud_ai_platform.VERTEX_CONTAINER_IMAGE_URI_KEY: vertex_container_image_uri,
+    tfx.extensions.google_cloud_ai_platform.SERVING_ARGS_KEY: vertex_serving_spec,
 }
 
 beam_pipeline_args = [
@@ -117,7 +95,7 @@ beam_pipeline_args = [
 
 if __name__ == "__main__":
 
-    absl.logging.set_verbosity(absl.logging.INFO)
+    logging.set_verbosity(logging.INFO)
 
     module_path = os.getcwd()
     if module_path not in sys.path:
@@ -128,7 +106,7 @@ if __name__ == "__main__":
     components = init_components(
         data_dir,
         module_file,
-        ai_platform_training_args=ai_platform_training_args,
+        vertex_training_custom_config=vertex_training_custom_config,
         serving_model_dir=serving_model_dir,
         # ai_platform_serving_args=ai_platform_serving_args
     )
