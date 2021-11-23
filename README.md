@@ -2,6 +2,10 @@
 
 Code repository for the O'Reilly publication ["Building Machine Learning Pipelines"](http://www.buildingmlpipelines.com) by Hannes Hapke &amp; Catherine Nelson
 
+## Update
+
+* The example code has been updated to work with TFX 1.4.0, TensorFlow 2.6.1, and Apache Beam 2.33.0. A GCP Vertex example (training and serving) was added.
+
 ## Set up the demo project
 
 Download the initial dataset. From the root of this repository, execute
@@ -63,7 +67,9 @@ Chapter 14. Code for training a differentially private version of the demo proje
 
 The code was written and tested for version 0.22.
 
+- As of 11/23/21, the examples have been updated to support TFX 1.4.0, TensorFlow 2.6.1, and Apache Beam 2.33.0. A GCP Vertex example (training and serving) was added.
+
 - As of 9/22/20, the interactive pipeline runs on TFX version 0.24.0rc1.
 Due to tiny TFX bugs, the pipelines currently don't work on the releases 0.23 and 0.24-rc0. Github issues have been filed with the TFX team specifically for the book pipelines ([Issue 2500](https://github.com/tensorflow/tfx/issues/2500#issuecomment-695363847)). We will update the repository once the issue is resolved.
 
-- As of 9/14/20, TFX only supports Python 3.8 with version >0.24.0rc0. 
+- As of 9/14/20, TFX only supports Python 3.8 with version >0.24.0rc0.
