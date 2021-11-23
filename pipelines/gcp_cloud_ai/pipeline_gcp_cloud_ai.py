@@ -50,9 +50,7 @@ ai_platform_training_args = {
     # https://cloud.google.com/ml-engine/docs/containers-overview
     # You can specify a custom container here. If not specified, TFX will
     # use a public container image matching the installed version of TFX.
-    "masterConfig": {
-        "imageUri": "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0"
-    },
+    "masterConfig": {"imageUri": "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0"},
     # important: Note that if you do specify a custom container, ensure the
     # entrypoint calls into TFX's run_executor script
     # (tfx/scripts/run_executor.py)
@@ -65,12 +63,16 @@ if ai_platform_distributed_training:
     from tfx.orchestration import data_types
 
     worker_count = data_types.RuntimeParameter(
-        name="worker-count", default=4, ptype=int,
+        name="worker-count",
+        default=4,
+        ptype=int,
     )
 
     # Type of worker machines used in distributed training.
     worker_type = data_types.RuntimeParameter(
-        name="worker-type", default="standard", ptype=str,
+        name="worker-type",
+        default="standard",
+        ptype=str,
     )
 
     ai_platform_training_args.update(
@@ -146,7 +148,7 @@ if __name__ == "__main__":
     # cli tool exports the environment variable to pass to the pipelines.
     tfx_image = os.environ.get(
         "KUBEFLOW_TFX_IMAGE",
-        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.21.4",
+        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:latest",
     )
 
     runner_config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
