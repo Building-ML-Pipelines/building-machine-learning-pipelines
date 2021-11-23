@@ -2,19 +2,20 @@
 
 import os
 import sys
-
 from typing import Text
 
-import absl
+from absl import logging
 from kfp import onprem
 from tfx.orchestration import pipeline
 from tfx.orchestration.kubeflow import kubeflow_dag_runner
+
 
 pipeline_name = "consumer_complaint_pipeline_kubeflow"
 
 persistent_volume_claim = "tfx-pvc"
 persistent_volume = "tfx-pv"
-persistent_volume_mount = "/tfx-data"
+# this folder needs to match the folder in the persistent volume which contains the module file
+persistent_volume_mount = "/tmp"
 
 # temp yaml file for Kubeflow Pipelines
 output_filename = f"{pipeline_name}.yaml"
@@ -24,7 +25,7 @@ output_dir = os.path.join(
 
 # pipeline inputs
 data_dir = os.path.join(persistent_volume_mount, "data")
-module_file = os.path.join(persistent_volume_mount, "components", "module.py")
+module_file = os.path.join("components", "module.py")
 
 # pipeline outputs
 output_base = os.path.join(persistent_volume_mount, "output")
@@ -35,8 +36,11 @@ def init_kubeflow_pipeline(
     components, pipeline_root: Text, direct_num_workers: int
 ) -> pipeline.Pipeline:
 
-    absl.logging.info(f"Pipeline root set to: {pipeline_root}")
-    beam_arg = [f"--direct_num_workers={direct_num_workers}"]
+    logging.info(f"Pipeline root set to: {pipeline_root}")
+    beam_arg = (
+        f"--direct_num_workers={direct_num_workers}",
+        "--direct_running_mode=multi_processing",
+    )
     p = pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
@@ -48,7 +52,7 @@ def init_kubeflow_pipeline(
 
 if __name__ == "__main__":
 
-    absl.logging.set_verbosity(absl.logging.INFO)
+    logging.set_verbosity(logging.INFO)
 
     module_path = os.getcwd()
     if module_path not in sys.path:
@@ -57,7 +61,7 @@ if __name__ == "__main__":
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
     tfx_image = os.environ.get(
         "KUBEFLOW_TFX_IMAGE",
-        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0",
+        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:latest",
     )
 
     from pipelines.base_pipeline import init_components

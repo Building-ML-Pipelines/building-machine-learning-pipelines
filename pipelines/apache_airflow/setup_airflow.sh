@@ -9,8 +9,8 @@ sed -i'.orig' 's/max_threads = 2/max_threads = 1/g' ~/airflow/airflow.cfg
 
 
 printf "${GREEN}Refreshing Airflow to pick up new config${NORMAL}\n"
-airflow resetdb --yes
-airflow initdb
+airflow db reset --yes
+airflow db init
 
 # Copy Dag to ~/airflow/dags
 mkdir -p ~/airflow/dags

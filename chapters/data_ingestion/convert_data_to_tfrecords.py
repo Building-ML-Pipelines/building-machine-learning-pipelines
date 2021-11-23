@@ -8,13 +8,7 @@ from tqdm import tqdm
 
 
 def _bytes_feature(value):
-    return tf.train.Feature(
-        bytes_list=tf.train.BytesList(value=[value.encode()])
-    )
-
-
-def _float_feature(value):
-    return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.encode()]))
 
 
 def _int64_feature(value):
@@ -26,12 +20,13 @@ def clean_rows(row):
         row["zip_code"] = "99999"
     return row
 
+
 def convert_zipcode_to_int(zipcode):
     if isinstance(zipcode, str) and "XX" in zipcode:
         zipcode = zipcode.replace("XX", "00")
     int_zipcode = int(zipcode)
     return int_zipcode
-        
+
 
 original_data_file = "../../data/consumer_complaints_with_narrative.csv"
 tfrecords_filename = "consumer-complaints.tfrecords"
@@ -53,9 +48,7 @@ with open(original_data_file) as csv_file:
                     "company": _bytes_feature(row["company"]),
                     "company_response": _bytes_feature(row["company_response"]),
                     "timely_response": _bytes_feature(row["timely_response"]),
-                    "consumer_disputed": _bytes_feature(
-                        row["consumer_disputed"]
-                    ),
+                    "consumer_disputed": _bytes_feature(row["consumer_disputed"]),
                 }
             )
         )

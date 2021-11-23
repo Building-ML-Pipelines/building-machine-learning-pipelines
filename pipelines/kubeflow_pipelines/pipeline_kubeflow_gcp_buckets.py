@@ -2,10 +2,9 @@
 
 import os
 import sys
-
 from typing import Text
 
-import absl
+from absl import logging
 from tfx.orchestration import pipeline
 from tfx.orchestration.kubeflow import kubeflow_dag_runner
 
@@ -34,8 +33,11 @@ def init_kubeflow_pipeline(
     components, pipeline_root: Text, direct_num_workers: int
 ) -> pipeline.Pipeline:
 
-    absl.logging.info(f"Pipeline root set to: {pipeline_root}")
-    beam_arg = [f"--direct_num_workers={direct_num_workers}"]
+    logging.info(f"Pipeline root set to: {pipeline_root}")
+    beam_arg = (
+        f"--direct_num_workers={direct_num_workers}",
+        "--direct_running_mode=multi_processing",
+    )
     p = pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
@@ -47,7 +49,7 @@ def init_kubeflow_pipeline(
 
 if __name__ == "__main__":
 
-    absl.logging.set_verbosity(absl.logging.INFO)
+    logging.set_verbosity(logging.INFO)
 
     module_path = os.getcwd()
     if module_path not in sys.path:
@@ -56,13 +58,13 @@ if __name__ == "__main__":
     metadata_config = kubeflow_dag_runner.get_default_kubeflow_metadata_config()
     tfx_image = os.environ.get(
         "KUBEFLOW_TFX_IMAGE",
-        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:0.22.0",
+        "gcr.io/oreilly-book/ml-pipelines-tfx-custom:latest",
     )
 
     from pipelines.base_pipeline import init_components
 
     components = init_components(
-        data_dir, module_file, 50000, 10000, serving_model_dir=serving_model_dir
+        data_dir, module_file, 5000, 100, serving_model_dir=serving_model_dir
     )
 
     runner_config = kubeflow_dag_runner.KubeflowDagRunnerConfig(
