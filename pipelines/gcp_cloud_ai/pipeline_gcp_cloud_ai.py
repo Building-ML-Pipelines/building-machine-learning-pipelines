@@ -110,6 +110,8 @@ beam_pipeline_args = [
     "--temp_location=" + os.path.join(output_bucket, "tmp"),
     "--region=" + gcp_region,
     "--disk_size_gb=50",
+    "--machine_type=e2-standard-8",
+    "--experiments=use_runner_v2",
 ]
 
 

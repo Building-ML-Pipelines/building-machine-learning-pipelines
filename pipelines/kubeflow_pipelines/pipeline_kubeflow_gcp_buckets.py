@@ -34,7 +34,10 @@ def init_kubeflow_pipeline(
 ) -> pipeline.Pipeline:
 
     logging.info(f"Pipeline root set to: {pipeline_root}")
-    beam_arg = [f"--direct_num_workers={direct_num_workers}"]
+    beam_arg = (
+        f"--direct_num_workers={direct_num_workers}",
+        "--direct_running_mode=multi_processing",
+    )
     p = pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,

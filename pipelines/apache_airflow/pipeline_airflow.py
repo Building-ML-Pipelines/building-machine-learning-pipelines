@@ -28,9 +28,11 @@ def init_pipeline(
     components, pipeline_root: Text, direct_num_workers: int
 ) -> pipeline.Pipeline:
 
-    beam_arg = [
+    beam_arg = (
         f"--direct_num_workers={direct_num_workers}",
-    ]
+        "--direct_running_mode=multi_processing",
+    )
+
     p = pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
