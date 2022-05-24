@@ -1,6 +1,6 @@
 tensorboard_plugin_fairness_indicators==0.35.0
 tensorflow_hub==0.12.0
 tensorflow_privacy==0.7.3
-tensorflow==2.6.1
+tensorflow==2.6.4
 tfx==1.4.0
 witwidget==1.8.1
